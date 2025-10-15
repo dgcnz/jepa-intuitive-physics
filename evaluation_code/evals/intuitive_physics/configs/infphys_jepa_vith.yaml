@@ -23,6 +23,6 @@ data:
   frame_steps: 2
 tag: jepa_vith
 nodes: 1
-tasks_per_node: 6
+tasks_per_node: 1
 eval_name: intuitive_physics
 dataset: intphys
