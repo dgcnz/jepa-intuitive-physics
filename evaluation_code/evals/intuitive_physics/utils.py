@@ -51,14 +51,17 @@ def slurm_account_partition_and_qos(low_pri: bool) -> str:
     return account, partition, qos
 
 
+# DATA_ROOT = "/mnt/sdb1/datasets/"
+DATA_ROOT = "/home/diego.canez/datasets/"
+
 DATASET_PATHS_BY_CLUSTER = {
     CLUSTER:{
-        'IntPhys-dev-O1': '/datasetsIntPhys/dev/O1/',
-        'IntPhys-dev-O2': '/datasetsIntPhys/dev/O2/',
-        'IntPhys-dev-O3': '/datasetsIntPhys/dev/O3/',
-        'IntPhys-test-O1': '/datasetsIntPhys/test/O1/',
-        'IntPhys-test-O2': '/datasetsIntPhys/test/O2/',
-        'IntPhys-test-O3': '/datasetsIntPhys/test/O3/',
+        'IntPhys-dev-O1': DATA_ROOT + 'intphys/dev/O1/',
+        'IntPhys-dev-O2': DATA_ROOT + 'intphys/dev/O2/',
+        'IntPhys-dev-O3': DATA_ROOT + 'intphys/dev/O3/',
+        'IntPhys-test-O1': DATA_ROOT + 'intphys/test/O1/',
+        'IntPhys-test-O2': DATA_ROOT + 'intphys/test/O2/',
+        'IntPhys-test-O3': DATA_ROOT + 'intphys/test/O3/',
         "GRASP-level-2": "/datasetsgrasp/GRASP/level2/",
         "InfLevel-lab":"/datasetsinflevel_lab/",
         "InfLevel-lab-priming":"/datasetsinflevel_lab/"
