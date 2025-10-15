@@ -28,6 +28,7 @@ dependencies = [
     "torch>=2",
     "torchvision>=0.23.0",
     "transformers>=4.57.0",
+    "wandb>=0.22.2",
     "webdataset>=1.0.2",
 ]
 

@@ -6,16 +6,17 @@
 #
 
 import importlib
-
+import wandb
 from src.utils.logging import get_logger
 
 logger = get_logger("Eval runner scaffold")
 
 
 def main(eval_name, args_eval, resume_preempt=False):
-    logger.info(f"Running evaluation: {eval_name}")
-    if eval_name.startswith("app."):
-        import_path = f"{eval_name}.eval"
-    else:
-        import_path = f"evals.{eval_name}.eval"
-    return importlib.import_module(import_path).main(args_eval=args_eval, resume_preempt=resume_preempt)
+    with wandb.init() as run:
+        logger.info(f"Running evaluation: {eval_name}")
+        if eval_name.startswith("app."):
+            import_path = f"{eval_name}.eval"
+        else:
+            import_path = f"evals.{eval_name}.eval"
+        return importlib.import_module(import_path).main(args_eval=args_eval, resume_preempt=resume_preempt)
