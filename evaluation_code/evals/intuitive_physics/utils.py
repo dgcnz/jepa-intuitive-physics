@@ -29,15 +29,6 @@ SUPPORTED_CLUSTERS = {
 
 @lru_cache()
 def get_cluster() -> str:
-    # If the node is assigned by slurm, this is easy
-    where = os.environ.get("SLURM_CLUSTER_NAME")
-    if where is not None:
-        if where in SUPPORTED_CLUSTERS:
-            return SUPPORTED_CLUSTERS[where]
-        else:
-            #return where we are to add support
-            return where
-    # default: return the default name
     return CLUSTER
 
 # Gets slurm job vars, to launch another job with the same vars
