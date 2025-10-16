@@ -544,7 +544,9 @@ def extract_losses(
                     )
 
                     preds = preds.view(num_videos, -1, *preds.shape[1:])
-                    preds = torch.zeros_like(preds, device=preds.device)
+                    # this next line seems to be a bug
+                    # preds = torch.zeros_like(preds, device=preds.device)  
+                    # source: https://github.com/facebookresearch/jepa-intuitive-physics/issues/4
                     targets = targets.view(num_videos, -1, *targets.shape[1:])
                 elif is_sigma:
                     ## TARGET
