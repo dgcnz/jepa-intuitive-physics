@@ -803,7 +803,7 @@ def init_model(
             world_size=1,  # this is just for the sinkhorn computation, not needed
             sinkhorn_iterations=args.sinkhorn_iterations,
             eps=args.sinkhorn_eps,
-            kwindow=args.kwindow,
+            kwindow=args.kwindow if 'kwindow' in args else 1,
         )
         if use_sigma_dino:
             target_encoder = SIGMA.DINOVideoEncoder(
