@@ -572,30 +572,9 @@ def extract_losses(
                         .detach()
                     )
                 elif is_sigma:
-                    ## TARGET
-                    # pieces [B, C, T, H, W]
-                    permuted_video = pieces.permute(0, 2, 1, 3, 4)
-                    # [B, T, C, H, W]
-                    bs, nf, _, h, w = permuted_video.shape
-                    permuted_video = permuted_video[:, ::2].flatten(0, 1)
-                    permuted_video = permuted_video.to(device, non_blocking=True)
-                    # feature_extraction_model = feature_extraction_model.to(device)
-                    features = target_encoder(permuted_video)
-                    _, np, dim = features.shape
-                    features = features.reshape(bs, nf // 2, np, dim)
-                    # []
-                    features_squeeze = rearrange(features, "b n o c -> b (n o) c")
-                    dino_targets = (
-                        features_squeeze - features_squeeze.mean(dim=-2, keepdim=True)
-                    ) / (
-                        features_squeeze.var(dim=-2, unbiased=True, keepdim=True).sqrt()
-                        + 1e-6
-                    )
-                    B, _, C = dino_targets.shape
-                    dino_targets = dino_targets[masks_pred].reshape(B, -1, C)
-                    ## MODEL
+                    targets = target_encoder(pieces, masks_pred)
                     outputs, (scores1, q1), (scores2, q2) = encoder(
-                        pieces, masks_pred, dino_targets
+                        pieces, masks_pred, targets
                     )
                     sigma_loss = "cross_entropy"
                     if sigma_loss == "cross_entropy":
