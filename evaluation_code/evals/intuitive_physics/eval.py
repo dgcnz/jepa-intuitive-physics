@@ -303,9 +303,7 @@ def main(args_eval, resume_preempt=False):
                     csv_logger.log(
                         block, "Filtered", frame_step, *[metrics[key] for key in keys]
                     )
-    if rank == 0 and "csv_logger" in locals():
-        csv_logger.close()
-        # also, let's log it through wandb
+    if rank == 0:
         df = pd.read_csv(log_file, sep=";")
         table = wandb.Table(dataframe=df)
         table_artifact = wandb.Artifact("artifact", type="dataset")
