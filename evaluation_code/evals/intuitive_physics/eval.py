@@ -306,20 +306,27 @@ def main(args_eval, resume_preempt=False):
     if rank == 0:
         df = pd.read_csv(log_file, sep=";")
         # we're interested mainly in: Relative Accuracy (avg) per block
-        # so we first group by "Block" (O1, O2, O3) and then take the max of "Relative Accuracy (avg)" 
+        # so we first group by "Block" (O1, O2, O3) and then take the max of "Relative Accuracy (avg)"
         # and we log one per block, that is  "O1": max_relative_accuracy_avg_for_O1, ...
-        res_df = df.groupby("Block").max().reset_index()[["Block", "Relative Accuracy (avg)"]]
+        res_df = (
+            df.groupby("Block")
+            .max()
+            .reset_index()[["Block", "Relative Accuracy (avg)"]]
+        )
         # we only log "o1_max_relative_accuracy_avg", "o2_max_relative_accuracy_avg", "o3_max_relative_accuracy_avg"
-        wandb.log({
-            f"{row['Block']}_max_relative_accuracy_avg": row["Relative Accuracy (avg)"]
-            for _, row in res_df.iterrows()
-        })
+        wandb.log(
+            {
+                f"{row['Block']}_max_relative_accuracy_avg": row[
+                    "Relative Accuracy (avg)"
+                ]
+                for _, row in res_df.iterrows()
+            }
+        )
         # extra logging
         table = wandb.Table(dataframe=df)
         table_artifact = wandb.Artifact("artifact", type="dataset")
         table_artifact.add(table, "table")
         table_artifact.add_file(log_file)
-
 
 
 def compute_metrics(losses, labels):
@@ -556,10 +563,14 @@ def extract_losses(
 
                     preds = preds.view(num_videos, -1, *preds.shape[1:])
                     # this next line seems to be a bug
-                    # preds = torch.zeros_like(preds, device=preds.device)  
+                    # preds = torch.zeros_like(preds, device=preds.device)
                     # source: https://github.com/facebookresearch/jepa-intuitive-physics/issues/4
                     targets = targets.view(num_videos, -1, *targets.shape[1:])
-                    loss = F.l1_loss(preds, targets, reduction="none").mean((2, 3)).detach()
+                    loss = (
+                        F.l1_loss(preds, targets, reduction="none")
+                        .mean((2, 3))
+                        .detach()
+                    )
                 elif is_sigma:
                     ## TARGET
                     # pieces [B, C, T, H, W]
@@ -571,22 +582,30 @@ def extract_losses(
                     # feature_extraction_model = feature_extraction_model.to(device)
                     features = target_encoder(permuted_video)
                     _, np, dim = features.shape
-                    features = features.reshape(bs, nf//2, np, dim)
+                    features = features.reshape(bs, nf // 2, np, dim)
                     # []
-                    features_squeeze = rearrange(features, 'b n o c -> b (n o) c')
-                    dino_targets = (features_squeeze - features_squeeze.mean(dim=-2, keepdim=True)
-                        ) / (features_squeeze.var(dim=-2, unbiased=True, keepdim=True).sqrt() + 1e-6)
+                    features_squeeze = rearrange(features, "b n o c -> b (n o) c")
+                    dino_targets = (
+                        features_squeeze - features_squeeze.mean(dim=-2, keepdim=True)
+                    ) / (
+                        features_squeeze.var(dim=-2, unbiased=True, keepdim=True).sqrt()
+                        + 1e-6
+                    )
                     B, _, C = dino_targets.shape
                     dino_targets = dino_targets[masks_pred].reshape(B, -1, C)
-                    ## MODEL 
-                    outputs, (scores1, q1), (scores2, q2) = encoder(pieces, masks_pred, dino_targets)
-                    sigma_loss = 'cross_entropy'
-                    if sigma_loss == 'cross_entropy':
+                    ## MODEL
+                    outputs, (scores1, q1), (scores2, q2) = encoder(
+                        pieces, masks_pred, dino_targets
+                    )
+                    sigma_loss = "cross_entropy"
+                    if sigma_loss == "cross_entropy":
                         scores1 = (scores1 / 0.1).softmax(-1)
                         scores2 = (scores2 / 0.1).softmax(-1)
-                        p_v = scores2[0].view(num_videos, -1, *scores2.shape[1:])
-                        p_phi = scores1[0].view(num_videos, -1, *scores1.shape[1:])
-                        loss = (-p_phi * p_v.log()).sum(-1)
+                        p_v = scores2.view(num_videos, -1, *scores2.shape[1:])
+                        p_phi = scores1.view(num_videos, -1, *scores1.shape[1:])
+                        loss = (
+                            -(p_phi * (p_v.clamp_min(1e-12)).log()).sum(-1).mean(-1)
+                        ).detach()
                     else:
                         # loss = F.l1_loss(preds, targets, reduction="none").mean((2, 3)).detach()
                         continue
@@ -610,7 +629,11 @@ def extract_losses(
 
                     preds = preds[0].view(num_videos, -1, *preds[0].shape[1:])
                     targets = targets[0].view(num_videos, -1, *targets[0].shape[1:])
-                    loss = F.l1_loss(preds, targets, reduction="none").mean((2, 3)).detach()
+                    loss = (
+                        F.l1_loss(preds, targets, reduction="none")
+                        .mean((2, 3))
+                        .detach()
+                    )
             all_losses_ctxt.append(loss)
         losses = torch.stack(all_losses_ctxt)
         losses = losses.permute(1, 0, 2)
@@ -776,7 +799,7 @@ def init_model(
             loss_func=args.loss_func,
             memory_size=args.memory_size,
             num_prototypes=args.num_prototypes,
-            world_size=1, # this is just for the sinkhorn computation, not needed
+            world_size=1,  # this is just for the sinkhorn computation, not needed
             sinkhorn_iterations=args.sinkhorn_iterations,
             eps=args.sinkhorn_eps,
             kwindow=args.kwindow,
@@ -796,7 +819,7 @@ def init_model(
 
         target_encoder = feature_extraction_model
         predictor = None
-        assert enc_checkpoint_key == 'model'
+        assert enc_checkpoint_key == "model"
 
     else:
         encoder = vit.__dict__[model_name](
