@@ -308,7 +308,7 @@ def main(args_eval, resume_preempt=False):
         table = wandb.Table(dataframe=df)
         table_artifact = wandb.Artifact("artifact", type="dataset")
         table_artifact.add(table, "table")
-        table_artifact.add_file("iris.csv")
+        table_artifact.add_file(log_file)
 
 
 def compute_metrics(losses, labels):
