@@ -604,7 +604,7 @@ def extract_losses(
                         p_v = scores2.view(num_videos, -1, *scores2.shape[1:])
                         p_phi = scores1.view(num_videos, -1, *scores1.shape[1:])
                         loss = (
-                            -(p_phi * (p_v.clamp_min(1e-12)).log()).sum(-1).mean(-1)
+                            -(p_phi * (p_v.clamp_min(1e-6)).log()).sum(-1).mean(-1)
                         ).detach()
                     else:
                         # loss = F.l1_loss(preds, targets, reduction="none").mean((2, 3)).detach()

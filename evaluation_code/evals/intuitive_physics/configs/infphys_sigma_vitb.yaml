@@ -3,8 +3,8 @@ pretrain:
   pred_checkpoint_key: predictor
   model_name: pretrain_sigma_base_patch16_224
   patch_size: 16
-  folder: /mnt/sdb1/checkpoint/intphys
-  checkpoint: sigma_ssv2_vit_b_sigma_with_dino.pth
+  folder: /home/diego.canez/checkpoints/intphys/sigma
+  checkpoint: ssv2_vit_b_sigma_with_dino.pth
   write_tag: sigma
   use_sdpa: true
   uniform_power: true
