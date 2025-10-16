@@ -32,7 +32,9 @@ parser.add_argument(
     help="location to save submitit logs",
     default=f"/logs/{USER}/submitit/",
 )
-parser.add_argument("--exclude", type=str, help="nodes to exclude from training", default=None)
+parser.add_argument(
+    "--exclude", type=str, help="nodes to exclude from training", default=None
+)
 parser.add_argument(
     "--batch-launch",
     action="store_true",
@@ -57,6 +59,12 @@ parser.add_argument(
     help="Cluster partition to use when submitting jobs",
 )
 parser.add_argument(
+    "--gres",
+    type=str,
+    default=None,  # gpu:a100:1 (one A100 GPU on KHIPU)
+    help="If specified, gres value to use when submitting jobs",
+)
+parser.add_argument(
     "--qos",
     type=str,
     default=None,
@@ -66,7 +74,6 @@ parser.add_argument("--time", type=int, default=4300, help="time in minutes to r
 
 
 class Trainer:
-
     def __init__(self, args_eval=None, resume_preempt=None):
         self.eval_name = args_eval["eval_name"]
         self.args_eval = args_eval
@@ -95,6 +102,7 @@ def launch_evals_with_parsed_args(
     submitit_folder,
     account=None,
     partition=None,
+    gres=None,
     qos=None,
     timeout=4300,
     nodes=1,
@@ -108,12 +116,10 @@ def launch_evals_with_parsed_args(
 
     time.sleep(delay_seconds)
     logger.info("Launching evaluations in separate jobs...")
-    executor = submitit.AutoExecutor(folder=os.path.join(submitit_folder, "job_%j"), slurm_max_num_timeout=20)
+    executor = submitit.AutoExecutor(
+        folder=os.path.join(submitit_folder, "job_%j"), slurm_max_num_timeout=20
+    )
     executor.update_parameters(
-        # for KHIPU
-        setup=[
-            "module load python3/3.11.11"
-        ],
         slurm_account=account,
         slurm_partition=partition,
         slurm_qos=qos,
@@ -122,7 +128,8 @@ def launch_evals_with_parsed_args(
         nodes=nodes,
         tasks_per_node=tasks_per_node,
         cpus_per_task=10,
-        gpus_per_node=tasks_per_node,
+        slurm_gres=gres,
+        # slurm_gres="gpu:a100:2",   # full, exclusive GPUs
     )
 
     if exclude_nodes is not None:
@@ -143,7 +150,6 @@ def launch_evals_with_parsed_args(
 
 
 def launch_evals():
-
     # ---------------------------------------------------------------------- #
     # 1. Put config file names in a list
     # ---------------------------------------------------------------------- #
@@ -179,6 +185,7 @@ def launch_evals():
         args_for_evals=configs,
         account=args.account,
         partition=args.partition,
+        gres=args.gres,
         qos=args.qos,
         submitit_folder=args.folder,
         timeout=args.time,

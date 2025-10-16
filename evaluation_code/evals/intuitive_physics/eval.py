@@ -21,7 +21,9 @@ except Exception:
 import logging
 import pprint
 import timm
+import wandb
 
+import pandas as pd
 import numpy as np
 from einops import rearrange
 
@@ -301,6 +303,14 @@ def main(args_eval, resume_preempt=False):
                     csv_logger.log(
                         block, "Filtered", frame_step, *[metrics[key] for key in keys]
                     )
+    if rank == 0 and "csv_logger" in locals():
+        csv_logger.close()
+        # also, let's log it through wandb
+        df = pd.read_csv(log_file, sep=";")
+        table = wandb.Table(dataframe=df)
+        table_artifact = wandb.Artifact("artifact", type="dataset")
+        table_artifact.add(table, "table")
+        table_artifact.add_file("iris.csv")
 
 
 def compute_metrics(losses, labels):
