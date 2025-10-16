@@ -768,6 +768,7 @@ def init_model(
     num_mask_tokens=2,
     is_mae=False,
     is_sigma=False,
+    use_sigma_dino=True,
 ):
     if is_mae:
         encoder = videomae.__dict__[model_name]()
@@ -804,20 +805,13 @@ def init_model(
             eps=args.sinkhorn_eps,
             kwindow=args.kwindow,
         )
-        pretraining = torch.hub.load("facebookresearch/dino:main", "dino_vitb16")
-        feature_extraction_model = timm.create_model(
-            "vit_base_patch16_224", pretrained=False
-        )
-        msg = feature_extraction_model.load_state_dict(
-            pretraining.state_dict(), strict=False
-        )
-        print(msg)
-        feature_extraction_model = SIGMA.FeatureExtractor(
-            feature_extraction_model, args.input_size, 16
-        )
-        feature_extraction_model.eval().to(device)
-
-        target_encoder = feature_extraction_model
+        if use_sigma_dino:
+            target_encoder = SIGMA.DINOVideoEncoder(
+                "dino_vitb16", input_size=args.input_size
+            )
+        else:
+            target_encoder = copy.deepcopy(encoder)
+        target_encoder = target_encoder.to(device)
         predictor = None
         assert enc_checkpoint_key == "model"
 
