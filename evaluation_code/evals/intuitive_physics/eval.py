@@ -305,10 +305,6 @@ def main(args_eval, resume_preempt=False):
                     )
     if rank == 0:
         df = pd.read_csv(log_file, sep=";")
-        table = wandb.Table(dataframe=df)
-        table_artifact = wandb.Artifact("artifact", type="dataset")
-        table_artifact.add(table, "table")
-        table_artifact.add_file(log_file)
         # we're interested mainly in: Relative Accuracy (avg) per block
         # so we first group by "Block" (O1, O2, O3) and then take the max of "Relative Accuracy (avg)" 
         # and we log one per block, that is  "O1": max_relative_accuracy_avg_for_O1, ...
@@ -318,6 +314,11 @@ def main(args_eval, resume_preempt=False):
             f"{row['Block']}_max_relative_accuracy_avg": row["Relative Accuracy (avg)"]
             for _, row in res_df.iterrows()
         })
+        # extra logging
+        table = wandb.Table(dataframe=df)
+        table_artifact = wandb.Artifact("artifact", type="dataset")
+        table_artifact.add(table, "table")
+        table_artifact.add_file(log_file)
 
 
 
