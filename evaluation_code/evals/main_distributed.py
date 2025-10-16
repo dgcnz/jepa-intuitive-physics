@@ -110,6 +110,10 @@ def launch_evals_with_parsed_args(
     logger.info("Launching evaluations in separate jobs...")
     executor = submitit.AutoExecutor(folder=os.path.join(submitit_folder, "job_%j"), slurm_max_num_timeout=20)
     executor.update_parameters(
+        # for KHIPU
+        setup=[
+            "module load python3/3.11.11"
+        ],
         slurm_account=account,
         slurm_partition=partition,
         slurm_qos=qos,
