@@ -29,8 +29,11 @@ __all__ = [
 
 
 class DINOVideoEncoder(nn.Module):
-    def __init__(self, name: str = "dino_vitb16", input_size: int = 224):
-        pretraining = torch.hub.load("facebookresearch/dino:main", "dino_vitb16")
+    def __init__(self, model_name: str = "dino_vitb16", input_size: int = 224):
+        super(DINOVideoEncoder, self).__init__()
+        self.model_name = model_name
+
+        pretraining = torch.hub.load("facebookresearch/dino:main", model_name)
         feature_extraction_model = timm.create_model(
             "vit_base_patch16_224", pretrained=False
         )
