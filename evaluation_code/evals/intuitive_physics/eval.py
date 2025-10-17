@@ -604,7 +604,7 @@ def extract_losses(
 
                         loss = F.cross_entropy(
                             scores2_vid.permute(0, 3, 1, 2), q1_hard_vid.long(), reduction='none'
-                        ).mean((1, 2)).detach()
+                        ).mean(2).detach()
                     elif sigma_loss_type == "l1_features":
                         # l1 loss like v-jepa, just in case
                         outputs_reshaped = outputs.view(num_videos, -1, *outputs.shape[1:])
