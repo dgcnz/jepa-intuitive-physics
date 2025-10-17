@@ -1,11 +1,11 @@
 pretrain:
   enc_checkpoint_key: model
   pred_checkpoint_key: null
-  model_name: pretrain_videomaev1_large_patch16_224
+  model_name: pretrain_videomaev1_base_patch16_224
   patch_size: 16
   folder: /home/diego.canez/checkpoints/intphys/videomae
   checkpoint: ssv2-vitb-ep2400.pth
-  write_tag: videomaev1_ep1600_k400_vitl
+  write_tag: videomaev1_ep2400_ssv2_vitb
   frames_per_clip: 16
 data:
   batch_size: 1
@@ -15,7 +15,7 @@ data:
   frames_per_clip: 16
   context_lengths: [2,4,6,8,10]
   frame_steps: 2
-tag: videomaev1_ep1600_k400_vitl
+tag: videomaev1_ep2400_ssv2_vitb
 nodes: 1
 tasks_per_node: 1
 eval_name: intuitive_physics
