@@ -4,7 +4,7 @@ pretrain:
   model_name: pretrain_videomaev1_large_patch16_224
   patch_size: 16
   folder: /home/diego.canez/checkpoints/intphys/videomae
-  checkpoint: ssv2-vitb-ep2400.pth
+  checkpoint: k400-vitl-ep1600.pth
   write_tag: videomaev1_ep1600_k400_vitl
   frames_per_clip: 16
 data:
