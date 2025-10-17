@@ -27,4 +27,4 @@ tag: jepa_vith
 nodes: 1
 tasks_per_node: 1
 eval_name: intuitive_physics
-dataset: inflevel
+dataset: inflevel_lab
