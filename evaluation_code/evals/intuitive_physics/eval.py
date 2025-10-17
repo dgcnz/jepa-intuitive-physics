@@ -158,6 +158,11 @@ def main(args_eval, resume_preempt=False):
     if not os.path.exists(folder):
         os.makedirs(folder, exist_ok=True)
     log_file = os.path.join(folder, f"{tag}_r{rank}.csv")
+
+    # Delete existing log file to prevent appending across multiple runs
+    if rank == 0 and os.path.exists(log_file):
+        os.remove(log_file)
+
     # Initialize model
 
     # -- pretrained encoder (frozen)
