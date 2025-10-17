@@ -577,7 +577,11 @@ def extract_losses(
                         .detach()
                     )
                 elif is_sigma:
-                    targets = target_encoder(pieces, masks_pred, full_mask)
+                    # Extract features for all frames
+                    all_features = target_encoder(pieces, full_mask)
+                    # Select only masked regions
+                    B, _, C = all_features.shape
+                    targets = all_features[masks_pred].reshape(B, -1, C)
                     outputs, (scores1, q1), (scores2, q2) = encoder(
                         pieces, masks_pred, targets
                     )
