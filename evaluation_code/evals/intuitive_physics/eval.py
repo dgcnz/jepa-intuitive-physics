@@ -577,9 +577,7 @@ def extract_losses(
                         .detach()
                     )
                 elif is_sigma:
-                    # Extract features for all frames
                     all_features = target_encoder(pieces, full_mask)
-                    # Select only masked regions
                     B, _, C = all_features.shape
                     targets = all_features[masks_pred].reshape(B, -1, C)
                     outputs, (scores1, q1), (scores2, q2) = encoder(
@@ -587,7 +585,8 @@ def extract_losses(
                     )
 
                     if sigma_loss_type == "cross_entropy":
-                        # KL divergence on prototype assignments
+                        # maybe easier CE, doesn't require sinkhorn-knopp, which is batch-sensitive
+                        # this eval uses B=1 per video, so SK might not be ideal
                         scores1 = (scores1 / 0.1).softmax(-1)
                         scores2 = (scores2 / 0.1).softmax(-1)
                         p_v = scores2.view(num_videos, -1, *scores2.shape[1:])
@@ -595,8 +594,19 @@ def extract_losses(
                         loss = (
                             -(p_phi * (p_v.clamp_min(1e-6)).log()).sum(-1).mean(-1)
                         ).detach()
+                    elif sigma_loss_type == "cross_entropy_sk":
+                        # cross-entropy: predict target assignments (q1) from decoder scores (scores2)
+                        q1_hard = q1.argmax(dim=-1)
+                        scores2_scaled = scores2 / 0.1
+
+                        scores2_vid = scores2_scaled.view(num_videos, -1, *scores2_scaled.shape[1:])
+                        q1_hard_vid = q1_hard.view(num_videos, -1, *q1_hard.shape[1:])
+
+                        loss = F.cross_entropy(
+                            scores2_vid.permute(0, 3, 1, 2), q1_hard_vid.long(), reduction='none'
+                        ).mean((1, 2)).detach()
                     elif sigma_loss_type == "l1_features":
-                        # L1 loss on decoder outputs (V-JEPA-style)
+                        # l1 loss like v-jepa, just in case
                         outputs_reshaped = outputs.view(num_videos, -1, *outputs.shape[1:])
                         targets_reshaped = targets.view(num_videos, -1, *targets.shape[1:])
                         loss = (
