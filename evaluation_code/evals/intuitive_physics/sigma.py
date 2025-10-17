@@ -47,7 +47,7 @@ class DINOVideoEncoder(nn.Module):
         feature_extraction_model.eval()
         self.model = feature_extraction_model
 
-    def forward(self, x, mask):
+    def forward(self, x, mask, full_mask=None):
         permuted_video = x.permute(0, 2, 1, 3, 4)
         bs, nf, _, h, w = permuted_video.shape
         permuted_video = permuted_video[:, ::2].flatten(0, 1)
@@ -61,6 +61,24 @@ class DINOVideoEncoder(nn.Module):
         B, _, C = dino_targets.shape
         dino_targets = dino_targets[mask].reshape(B, -1, C)
         return dino_targets
+
+
+class SIGMAVideoEncoder(nn.Module):
+    """Wrapper to use SIGMA encoder as target encoder (self-distillation)"""
+
+    def __init__(self, sigma_model):
+        super(SIGMAVideoEncoder, self).__init__()
+        self.sigma_model = sigma_model
+
+    def forward(self, x, mask_pred, full_mask):
+        # Process all tokens with encoder
+        enc_out, _ = self.sigma_model.encoder(x, ~full_mask)
+        # Project to decoder dimension
+        targets = self.sigma_model.encoder_to_decoder(enc_out)
+        # Select only masked regions
+        B, _, C = targets.shape
+        targets = targets[mask_pred].reshape(B, -1, C)
+        return targets
 
 
 class PretrainVisionTransformerEncoder(nn.Module):

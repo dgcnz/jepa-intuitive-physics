@@ -133,6 +133,8 @@ def main(args_eval, resume_preempt=False):
     is_sigma = args_eval.get("is_sigma", False)
     mae_decoder_blocks = args_eval.get("mae_decoder_blocks", -1)
     normalize_targets = args_eval.get("normalize_targets", True)
+    sigma_target_enc = args_eval.get("sigma_target_enc", "dino")
+    sigma_loss_type = args_eval.get("sigma_loss_type", "cross_entropy")
     # ----------------------------------------------------------------------- #
 
     try:
@@ -178,6 +180,7 @@ def main(args_eval, resume_preempt=False):
         use_sdpa=use_sdpa,
         is_mae=is_mae,
         is_sigma=is_sigma,
+        sigma_target_enc=sigma_target_enc,
     )
 
     if not (is_mae or is_sigma):
@@ -244,6 +247,7 @@ def main(args_eval, resume_preempt=False):
                     patch_size=patch_size,
                     resolution=resolution,
                     normalize_targets=normalize_targets,
+                    sigma_loss_type=sigma_loss_type,
                 )
 
                 all_losses = batch_all_gather(all_losses).cpu()
@@ -424,6 +428,7 @@ def extract_losses(
     patch_size=16,
     resolution=224,
     normalize_targets=True,
+    sigma_loss_type="cross_entropy",
 ):
     print(context_lengths)
 
@@ -572,12 +577,13 @@ def extract_losses(
                         .detach()
                     )
                 elif is_sigma:
-                    targets = target_encoder(pieces, masks_pred)
+                    targets = target_encoder(pieces, masks_pred, full_mask)
                     outputs, (scores1, q1), (scores2, q2) = encoder(
                         pieces, masks_pred, targets
                     )
-                    sigma_loss = "cross_entropy"
-                    if sigma_loss == "cross_entropy":
+
+                    if sigma_loss_type == "cross_entropy":
+                        # KL divergence on prototype assignments
                         scores1 = (scores1 / 0.1).softmax(-1)
                         scores2 = (scores2 / 0.1).softmax(-1)
                         p_v = scores2.view(num_videos, -1, *scores2.shape[1:])
@@ -585,9 +591,15 @@ def extract_losses(
                         loss = (
                             -(p_phi * (p_v.clamp_min(1e-6)).log()).sum(-1).mean(-1)
                         ).detach()
-                    else:
-                        # loss = F.l1_loss(preds, targets, reduction="none").mean((2, 3)).detach()
-                        continue
+                    elif sigma_loss_type == "l1_features":
+                        # L1 loss on decoder outputs (V-JEPA-style)
+                        outputs_reshaped = outputs.view(num_videos, -1, *outputs.shape[1:])
+                        targets_reshaped = targets.view(num_videos, -1, *targets.shape[1:])
+                        loss = (
+                            F.l1_loss(outputs_reshaped, targets_reshaped, reduction="none")
+                            .mean((2, 3))
+                            .detach()
+                        )
                 else:
                     h = target_encoder(pieces, full_mask)[0]
                     if normalize_targets:
@@ -747,7 +759,7 @@ def init_model(
     num_mask_tokens=2,
     is_mae=False,
     is_sigma=False,
-    use_sigma_dino=True,
+    sigma_target_enc="dino",
 ):
     if is_mae:
         encoder = videomae.__dict__[model_name]()
@@ -782,15 +794,16 @@ def init_model(
             world_size=1,  # this is just for the sinkhorn computation, not needed
             sinkhorn_iterations=args.sinkhorn_iterations,
             eps=args.sinkhorn_eps,
-            kwindow=args.kwindow if 'kwindow' in args else 1,
+            # Some SIGMA checkpoints may not define kwindow; default to 1
+            kwindow=getattr(args, "kwindow", 1),
         )
-        if use_sigma_dino:
+        if sigma_target_enc == "dino":
             target_encoder = SIGMA.DINOVideoEncoder(
                 "dino_vitb16", input_size=args.input_size
             )
-        else:
-            target_encoder = copy.deepcopy(encoder)
-        target_encoder = target_encoder.to(device)
+            target_encoder = target_encoder.to(device)
+        elif sigma_target_enc == "sigma":
+            target_encoder = None  # Will be created after loading weights
         predictor = None
         assert enc_checkpoint_key == "model"
 
@@ -848,4 +861,10 @@ def init_model(
         pred_checkpoint_key=pred_checkpoint_key,
         is_mae=is_mae or is_sigma,
     )
+
+    # Create SIGMAVideoEncoder after loading weights
+    if is_sigma and sigma_target_enc == "sigma":
+        target_encoder = SIGMA.SIGMAVideoEncoder(encoder)
+        target_encoder = target_encoder.to(device)
+
     return encoder, target_encoder, predictor

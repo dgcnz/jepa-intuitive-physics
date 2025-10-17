@@ -27,3 +27,5 @@ tasks_per_node: 1
 eval_name: intuitive_physics
 dataset: intphys
 is_sigma: true
+sigma_target_enc: sigma
+sigma_loss_type: l1_features
