@@ -53,9 +53,9 @@ DATASET_PATHS_BY_CLUSTER = {
         'IntPhys-test-O1': DATA_ROOT + 'intphys/test/O1/',
         'IntPhys-test-O2': DATA_ROOT + 'intphys/test/O2/',
         'IntPhys-test-O3': DATA_ROOT + 'intphys/test/O3/',
-        "GRASP-level-2": "/datasetsgrasp/GRASP/level2/",
-        "InfLevel-lab":"/datasetsinflevel_lab/",
-        "InfLevel-lab-priming":"/datasetsinflevel_lab/"
+        "GRASP-level-2": DATA_ROOT + "grasp/videos/level2/",
+        "InfLevel-lab": DATA_ROOT + "inflevel-lab/inflevel_lab/",
+        "InfLevel-lab-priming": DATA_ROOT + "inflevel-lab/inflevel_lab/",
     }
 }
 
