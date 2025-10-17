@@ -21,7 +21,7 @@ data:
   frames_per_clip: 16
   context_lengths: [2,4,6,8,10]
   frame_steps: 2
-tag: sigma
+tag: sigma_dino_l1_ssv2
 nodes: 1
 tasks_per_node: 1
 eval_name: intuitive_physics
