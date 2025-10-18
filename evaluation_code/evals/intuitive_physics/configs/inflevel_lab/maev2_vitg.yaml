@@ -1,0 +1,24 @@
+pretrain:
+  enc_checkpoint_key: model
+  pred_checkpoint_key: predictor
+  model_name: pretrain_videomae_giant_patch14_224
+  patch_size: 14
+  folder: /home/diego.canez/checkpoints/intphys/videomaev2
+  checkpoint: vit_g_hybrid_pt_1200e.pth
+  write_tag: videomaev2_g
+  frames_per_clip: 16
+data:
+  batch_size: 1
+  resolution: 224
+  stride_sliding_window: 2
+  use_bfloat16: true
+  frames_per_clip: 32
+  context_lengths: [4,8,12,16,20]
+  frame_steps: 5
+dataset: inflevel_lab
+tag: videomaev2_g
+nodes: 1
+tasks_per_node: 1
+eval_name: intuitive_physics
+is_mae: true
+mae_decoder_blocks: -1
