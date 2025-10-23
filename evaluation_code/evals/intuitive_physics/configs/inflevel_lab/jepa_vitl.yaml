@@ -18,7 +18,7 @@ data:
   resolution: 224
   stride_sliding_window: 2
   use_bfloat16: true
-  frames_per_clip: 32
+  frames_per_clip: 16
   context_lengths: [4,8,12,16,20]
   frame_steps: 5
 tag: jepa_vitl
