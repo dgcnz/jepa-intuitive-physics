@@ -9,6 +9,7 @@ dependencies = [
     "braceexpand>=0.1.7",
     "decord>=0.6.0",
     "einops>=0.8.1",
+    "fabric>=3.2.2",
     "fire>=0.7.1",
     "ftfy>=6.3.1",
     "h5py>=3.14.0",
