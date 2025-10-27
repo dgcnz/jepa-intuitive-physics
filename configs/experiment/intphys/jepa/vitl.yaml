@@ -34,7 +34,8 @@ hydra:
     tasks_per_node: 1
     cpus_per_task: 10
     gres: gpu:rtxa6000:1
-    partition: data-science
+    partition: big-mem
+    array_parallelism: 2
     account: investigacion1
     setup:
       - echo "Hello World"

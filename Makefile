@@ -21,3 +21,6 @@ stdout:
 
 squeue:
 	fab run --target=$(TARGET) --cmd "squeue"
+
+wandb-sync:
+	fab run --target=$(TARGET) --cmd "echo logs/intuitive-physics-eval/multiruns/$(dir)/*/wandb/offline-run-* | xargs wandb sync"
