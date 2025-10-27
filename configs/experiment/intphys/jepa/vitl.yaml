@@ -9,7 +9,7 @@ tags: ["intphys", "jepa", "vitl"]
 
 suprise: 'l1'
 data:
-  root: /home/diego.canez/datasets/intphys/dev/
+  root: /home/diego.canez/datasets/intphys/dev
 
 hydra:
   mode: MULTIRUN
