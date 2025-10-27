@@ -15,6 +15,10 @@ model:
   ckpt_kwargs: 
     ckpt: /home/diego.canez/checkpoints/intphys/jepa/vitl16.pth.tar
 
+trainer:
+  loggers:
+    offline: true
+
 hydra:
   mode: MULTIRUN
   sweeper:

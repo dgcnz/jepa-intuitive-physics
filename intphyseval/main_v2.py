@@ -149,7 +149,7 @@ def extract_losses_single(
     all_labels = []
     all_losses = []
 
-    for batch in tqdm(loader, disable=(fabric.global_rank != 0)):
+    for batch in tqdm(loader, disable=not fabric.is_global_zero, mininterval=10):
         assert batch[0].shape[0] == 1, "Batch size > 1 not supported"
         clips: Float[Tensor, "V C T H W"] = batch[0][0]
         labels: Int[Tensor, "V"] = batch[1][0]
@@ -290,6 +290,9 @@ def run_eval(cfg):
     if cfg.model.pretrained:
         net.load_ckpt(**cfg.model.ckpt_kwargs)
     net.freeze()
+
+    if fabric.is_global_zero:
+        log.info('Running eval')
 
     # Single run over provided loader
     all_losses, all_labels = extract_losses_single(
