@@ -1,5 +1,4 @@
 # @package hydra.launcher
-launcher:
-  _target_: hydra_plugins.hydra_submitit_launcher.submitit_launcher.SlurmLauncher
-  submitit_folder: ${hydra.sweep.dir}/.submitit/%j
-  name: ${hydra.job.name}
+_target_: hydra_plugins.hydra_submitit_launcher.submitit_launcher.SlurmLauncher
+submitit_folder: ${hydra.sweep.dir}/.submitit/%j
+name: ${hydra.job.name}
