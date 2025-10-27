@@ -927,6 +927,19 @@ wheels = [
 ]
 
 [[package]]
+name = "hydra-submitit-launcher"
+version = "1.2.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "hydra-core" },
+    { name = "submitit" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/4f/93/8f19eba16318fe79f17ae5a86ed4efc9641c33151f67a0f172fbd15ddd41/hydra-submitit-launcher-1.2.0.tar.gz", hash = "sha256:e14c8eb46d020fac60ba25f82bcc368dc55851d2683dc95c88631ffcf15e4a34", size = 4875 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/d1/9b/0ea17f1780004c52f83566b5ca78a0844c93f5abdbbf625e40962af1ffcc/hydra_submitit_launcher-1.2.0-py3-none-any.whl", hash = "sha256:51ce468fbc91211c3a46677eefde94bbb9f721c9545af0be6dd0a95658515613", size = 5207 },
+]
+
+[[package]]
 name = "idna"
 version = "3.11"
 source = { registry = "https://pypi.org/simple" }
@@ -1064,6 +1077,7 @@ dependencies = [
     { name = "ftfy" },
     { name = "h5py" },
     { name = "hydra-core" },
+    { name = "hydra-submitit-launcher" },
     { name = "iopath" },
     { name = "jaxtyping" },
     { name = "lightning" },
@@ -1104,6 +1118,7 @@ requires-dist = [
     { name = "ftfy", specifier = ">=6.3.1" },
     { name = "h5py", specifier = ">=3.14.0" },
     { name = "hydra-core", specifier = ">=1.3.2" },
+    { name = "hydra-submitit-launcher", specifier = ">=1.2.0" },
     { name = "iopath", specifier = ">=0.1.10" },
     { name = "jaxtyping", specifier = ">=0.3.3" },
     { name = "lightning", specifier = ">=2.5.5" },
