@@ -25,10 +25,10 @@ hydra:
   sweeper:
     params:
       stride: 2
-      # context_length: 2,4,6,8,10
-      # data.property: O1,O2,O3
-      context_length: 2
-      data.property: O1
+      context_length: 2,4,6,8,10
+      data.property: O1,O2,O3
+      # context_length: 2
+      # data.property: O1
   launcher:
     timeout_min: 60
     nodes: 1

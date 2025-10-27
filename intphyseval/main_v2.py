@@ -137,7 +137,6 @@ def extract_losses_single(
         num_windows = preds.shape[0] // V
         preds = preds.view(V, num_windows, *preds.shape[1:])
         targets = targets.view(V, num_windows, *targets.shape[1:])
-        # loss = F.l1_loss(preds, targets, reduction="none").mean((2, 3)).detach()
         loss = surprise(preds, targets).detach()
 
         losses = loss.unsqueeze(1)  # [num_videos, n_ctxt=1, n_windows]
