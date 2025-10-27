@@ -135,8 +135,8 @@ def extract_losses_single(
         preds, targets = net(pieces, masks_enc, masks_pred, full_mask)
         # Reshape [B, N, D] -> [V, num_windows, N, D]
         num_windows = preds.shape[0] // V
-        preds = preds.view(V, num_windows, preds.shape[1], preds.shape[2])
-        targets = targets.view(V, num_windows, targets.shape[1], targets.shape[2])
+        preds = preds.view(V, num_windows, *preds.shape[1:])
+        targets = targets.view(V, num_windows, *targets.shape[1:])
         # loss = F.l1_loss(preds, targets, reduction="none").mean((2, 3)).detach()
         loss = surprise(preds, targets).detach()
 
