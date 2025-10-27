@@ -36,3 +36,8 @@ hydra:
     gres: gpu:rtxa6000:1
     partition: data-science
     account: investigacion1
+    setup:
+      - echo "Hello World"
+      - module load python3/3.11.11
+      - source ./venv/bin/activate
+
