@@ -27,7 +27,7 @@ paths:
 
 float32_matmul_precision: high
 allow_tf32: true
-cudnn_benchmark: true
+cudnn_benchmark: false
 compile: false
 
 # Eval controls

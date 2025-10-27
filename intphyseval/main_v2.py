@@ -254,17 +254,17 @@ def setup(cfg):
 
     L.seed_everything(cfg.seed, workers=True)
 
-    # Set float32 matmul precision
-    if cfg.get("float32_matmul_precision"):
-        torch.set_float32_matmul_precision(cfg.float32_matmul_precision)
+    # # Set float32 matmul precision
+    # if cfg.get("float32_matmul_precision"):
+    #     torch.set_float32_matmul_precision(cfg.float32_matmul_precision)
 
-    if cfg.get("allow_tf32", False):
-        torch.backends.cuda.matmul.allow_tf32 = True
+    # if cfg.get("allow_tf32", False):
+    #     torch.backends.cuda.matmul.allow_tf32 = True
 
-    # cuDNN optimization
-    if cfg.get("cudnn_benchmark", False):
-        import torch.backends.cudnn as cudnn
-        cudnn.benchmark = True
+    # # cuDNN optimization
+    # if cfg.get("cudnn_benchmark", False):
+    #     import torch.backends.cudnn as cudnn
+    #     cudnn.benchmark = True
 
     fabric.launch()
     return fabric
