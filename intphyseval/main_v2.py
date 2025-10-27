@@ -304,6 +304,9 @@ def main(cfg: DictConfig):
         run_eval(cfg)
     except KeyboardInterrupt:
         pass
+    except Exception as e:
+        log.exception(e)
+        raise e
     finally:
         if wandb.run:
             wandb.finish()
