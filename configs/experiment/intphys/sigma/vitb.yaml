@@ -7,7 +7,7 @@ defaults:
 
 tags: ["intphys", "sigma", "vitb"]
 
-mask_as_bool: false
+mask_as_bool: true
 surprise: 'cross_entropy_sk'
 data:
   root: /home/diego.canez/datasets/intphys/dev
