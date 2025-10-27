@@ -24,14 +24,14 @@ hydra:
   sweeper:
     params:
       stride: 2
-      context_length: 2
-      data.property: O1,O2
-      # context_length: 2,4,6,8,10
-      # data.property: O1,O2,O3
+      context_length: 2,4,6,8,10
+      data.property: O1,O2,O3
+      # context_length: 2
+      # data.property: O1,O2
   launcher:
     timeout_min: 60
     nodes: 1
-    tasks_per_node: 2
+    tasks_per_node: 1
     cpus_per_task: 10
     gres: gpu:rtxa6000:1
     partition: data-science
