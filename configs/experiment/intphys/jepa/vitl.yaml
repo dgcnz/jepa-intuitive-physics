@@ -10,6 +10,7 @@ tags: ["intphys", "jepa", "vitl"]
 suprise: 'l1'
 
 hydra:
+  mode: MULTIRUN
   sweeper:
     params:
       stride: 2
