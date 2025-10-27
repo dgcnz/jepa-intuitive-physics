@@ -7,6 +7,7 @@ defaults:
 
 tags: ["intphys", "jepa", "vitl"]
 
+mask_as_bool: false
 suprise: 'l1'
 data:
   root: /home/diego.canez/datasets/intphys/dev

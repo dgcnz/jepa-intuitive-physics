@@ -10,7 +10,14 @@ from tqdm import tqdm
 from einops import rearrange
 from sklearn.metrics import precision_recall_curve, roc_curve, auc
 from jaxtyping import Float, Int
+from typing import Callable
 from torch import Tensor
+from intphyseval.utils import (
+    get_breaking_points,
+    get_matches,
+    get_time_masks,
+    pad_tensors,
+)
 
 import hydra
 from omegaconf import DictConfig, OmegaConf
@@ -20,6 +27,7 @@ import lightning as L
 import wandb
 import rootutils
 
+
 rootutils.setup_root(__file__, indicator=".project-root", pythonpath=True)
 
 OmegaConf.register_new_resolver("eval", eval)
@@ -28,64 +36,6 @@ logging.basicConfig()
 
 log = logging.getLogger(__name__)
 log.setLevel(logging.INFO)
-
-
-def get_time_masks(
-    n_timesteps,
-    spatial_size=(16, 16),
-    temporal_size=2,
-    spatial_dim=(224, 224),
-    temporal_dim=16,
-    as_bool=False,
-):
-    assert n_timesteps % temporal_size == 0
-    x, _ = spatial_dim
-    t = temporal_dim
-
-    num_patches_spatial = x / spatial_size[0] * x / spatial_size[0]
-    num_patches_time = t / temporal_size
-    patches_n_timesteps = int(num_patches_spatial * n_timesteps // temporal_size)
-
-    patch_idcs = torch.arange(
-        start=0, end=int(num_patches_spatial * num_patches_time), dtype=int
-    )
-    if as_bool:
-        mask_enc = patch_idcs < patches_n_timesteps
-        mask_pred = patch_idcs >= patches_n_timesteps
-        full_mask = patch_idcs >= 0
-    else:
-        mask_enc = patch_idcs[:patches_n_timesteps]
-        mask_pred = patch_idcs[patches_n_timesteps:]
-        full_mask = patch_idcs
-    return mask_enc, mask_pred, full_mask
-
-
-def get_breaking_points(clip):
-    bps = []
-    for diff in [clip[0] - clip[1], clip[0] - clip[2], clip[0] - clip[3]]:
-        try:
-            i = torch.argwhere(diff.sum(2).sum(2).sum(0) != 0)[0, 0].item()
-        except Exception:
-            i = clip.shape[2]
-        bps.append(i)
-    return bps
-
-
-def get_matches(bps):
-    if np.argmax(bps) == 0:
-        return [[0, 1], [2, 3]]
-    elif np.argmax(bps) == 1:
-        return [[0, 2], [1, 3]]
-    else:
-        return [[0, 3], [1, 2]]
-
-
-def pad_tensors(tensors, max_length, length_axis=-1):
-    padded_tensors = []
-    for t in tensors:
-        padding_needed = max_length - t.size(length_axis)
-        padded_tensors.append(F.pad(t, (0, padding_needed)))
-    return padded_tensors
 
 
 def rearrange_clips(
@@ -118,6 +68,7 @@ def create_masks(
     model_num_frames: int,
     patch_size: int,
     B: int,
+    as_bool: bool,
 ):
     """Create encoder/prediction/full masks for given batch tokenization size."""
     m, m_, full_m = get_time_masks(
@@ -136,6 +87,14 @@ def create_masks(
     return masks_enc, masks_pred, full_mask
 
 
+def cross_entropy_sk(preds, targets):
+    return F.cross_entropy(preds.permute(0, 3, 1, 2), targets, reduction="none").mean(2)
+
+
+def l1_features(preds, targets):
+    return F.l1_loss(preds, targets, reduction="none").mean((2, 3))
+
+
 @torch.no_grad()
 def extract_losses_single(
     fabric: L.Fabric,
@@ -145,6 +104,8 @@ def extract_losses_single(
     stride: int,
     patch_size: int,
     model_num_frames: int,
+    mask_as_bool: bool,
+    surprise: Callable[[tuple[Tensor, Tensor]], Tensor]
 ):
     all_labels = []
     all_losses = []
@@ -165,6 +126,7 @@ def extract_losses_single(
             model_num_frames=model_num_frames,
             patch_size=patch_size,
             B=pieces.shape[0],
+            as_bool=mask_as_bool,
         )
         masks_enc, masks_pred, full_mask = fabric.to_device(
             (masks_enc, masks_pred, full_mask)
@@ -175,7 +137,8 @@ def extract_losses_single(
         num_windows = preds.shape[0] // V
         preds = preds.view(V, num_windows, preds.shape[1], preds.shape[2])
         targets = targets.view(V, num_windows, targets.shape[1], targets.shape[2])
-        loss = F.l1_loss(preds, targets, reduction="none").mean((2, 3)).detach()
+        # loss = F.l1_loss(preds, targets, reduction="none").mean((2, 3)).detach()
+        loss = surprise(preds, targets).detach()
 
         losses = loss.unsqueeze(1)  # [num_videos, n_ctxt=1, n_windows]
 
@@ -224,7 +187,7 @@ def compute_metrics(losses, labels):
 
 
 def sync_outputs(fabric: L.Fabric, all_losses, all_labels):
-    lengths = [l.size(-1) for l in all_losses]
+    lengths = [l.size(-1) for l in all_losses]  # noqa
     max_length = torch.tensor([max(lengths)], device=fabric.device)
     max_length = fabric.all_reduce(max_length, reduce_op="max")
 
@@ -254,6 +217,9 @@ def setup(cfg):
 
     L.seed_everything(cfg.seed, workers=True)
 
+    # TODO: This is getting pickling errors with SLURM launcher,
+    # so disabling for now.
+
     # # Set float32 matmul precision
     # if cfg.get("float32_matmul_precision"):
     #     torch.set_float32_matmul_precision(cfg.float32_matmul_precision)
@@ -269,6 +235,7 @@ def setup(cfg):
     fabric.launch()
     return fabric
 
+
 def run_eval(cfg):
     output_dir = Path(cfg.paths.output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -281,7 +248,7 @@ def run_eval(cfg):
         net = instantiate(cfg.model.net)
     dataloader = instantiate(cfg.data.dataloader)
 
-    if cfg.get('compile', False):
+    if cfg.get("compile", False):
         net = torch.compile(net, fullgraph=True, dynamic=False)
 
     loader = fabric.setup_dataloaders(dataloader)
@@ -292,9 +259,11 @@ def run_eval(cfg):
     net.freeze()
 
     if fabric.is_global_zero:
-        log.info('Running eval')
+        log.info("Running eval")
 
     # Single run over provided loader
+    assert cfg.surprise in ['cross_entropy_sk', 'l1'], "Surprise function not recognized"
+    surprise = cross_entropy_sk if cfg.surprise == 'cross_entropy_sk' else l1_features
     all_losses, all_labels = extract_losses_single(
         fabric=fabric,
         net=net,
@@ -303,8 +272,16 @@ def run_eval(cfg):
         stride=cfg.stride,
         patch_size=net.patch_size,
         model_num_frames=net.num_frames,
+        mask_as_bool=cfg.mask_as_bool,
+        surprise=surprise
     )
+    if fabric.is_global_zero:
+        log.info("Syncing outputs")
+
     all_losses, all_labels = sync_outputs(fabric, all_losses, all_labels)
+
+    if fabric.is_global_zero:
+        log.info("Saving and computing metrics")
 
     torch.save(
         {
@@ -314,12 +291,12 @@ def run_eval(cfg):
             "losses": all_losses,
             "labels": all_labels,
         },
-        output_dir / "losses.pth"
+        output_dir / "losses.pth",
     )
-    losses_for_ctxt = all_losses[:, 0]
-    metrics = compute_metrics(losses_for_ctxt, all_labels)
+    metrics = compute_metrics(all_losses[:, 0], all_labels)
     if fabric.is_global_zero:
         fabric.log_dict(metrics)
+
 
 @hydra.main(config_path="../configs", config_name="eval", version_base=None)
 def main(cfg: DictConfig):
@@ -330,6 +307,7 @@ def main(cfg: DictConfig):
     finally:
         if wandb.run:
             wandb.finish()
+
 
 if __name__ == "__main__":
     main()
