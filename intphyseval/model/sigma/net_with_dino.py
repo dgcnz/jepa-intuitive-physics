@@ -125,7 +125,7 @@ class SIGMA(torch.nn.Module):
         )
         targets = q1.argmax(dim=-1)
         preds = scores2 / 0.1
-        return preds, targets
+        return preds, targets.long()
 
     def freeze(self):
         self.target_encoder.eval()
@@ -143,8 +143,6 @@ class SIGMA(torch.nn.Module):
         checkpoint = torch.load(ckpt, map_location="cpu", weights_only=False)
 
         # Encoder
-        print(self.encoder.head)
-        print([k for k in checkpoint["model"].keys() if  k.startswith('head')])
         self.encoder.load_state_dict(checkpoint["model"], strict=True)
 
         # TODO: force DINO target checkpoint be loaded here

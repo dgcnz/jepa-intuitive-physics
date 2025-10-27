@@ -23,4 +23,12 @@ squeue:
 	fab run --target=$(TARGET) --cmd "squeue"
 
 wandb-sync:
-	fab run --target=$(TARGET) --cmd "echo logs/intuitive-physics-eval/multiruns/$(dir)/*/wandb/offline-run-* | xargs wandb sync"
+	@test -n "$(ID)" || { echo "Usage: make $@ TARGET=<host> ID=<leaf-name>" >&2; exit 1; }
+	@fab run --target=$(TARGET) --cmd ' \
+	  dir=$$(find . -type d -name '"$(ID)"' -print -quit); \
+	  [ -n "$$dir" ] || { echo "no match for '"$(ID)"'" >&2; exit 1; }; \
+	  base=$${dir%/*/*}; \
+	  set -- "$$base"/*/wandb/offline-run-*; \
+	  [ -e "$$1" ] || { echo "no offline runs under $$base" >&2; exit 0; }; \
+	  exec uv run wandb sync "$$@" \
+	'
