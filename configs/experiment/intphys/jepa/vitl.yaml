@@ -11,6 +11,10 @@ suprise: 'l1'
 data:
   root: /home/diego.canez/datasets/intphys/dev
 
+model:
+  ckpt_kwargs: 
+    ckpt: /home/diego.canez/checkpoints/intphys/jepa/vitl16.pth.tar
+
 hydra:
   mode: MULTIRUN
   sweeper:
