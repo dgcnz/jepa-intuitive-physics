@@ -7,7 +7,7 @@ defaults:
 
 stride: 2
 context_length: 6
-suprise: 'l1'
+surprise: 'l1'
 seed: 0
 tags: null
 
