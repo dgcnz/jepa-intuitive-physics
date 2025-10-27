@@ -35,7 +35,6 @@ hydra:
     cpus_per_task: 10
     gres: gpu:rtxa6000:1
     partition: big-mem
-    array_parallelism: 2
     account: investigacion1
     setup:
       - echo "Hello World"
