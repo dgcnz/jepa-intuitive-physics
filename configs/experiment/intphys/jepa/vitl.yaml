@@ -1,0 +1,27 @@
+# @package _global_
+defaults:
+  - override /model: jepa_vitl
+  - override /data: intphys
+  - override /hydra/launcher: slurm
+  - _self_
+
+tags: ["intphys", "jepa", "vitl"]
+
+suprise: 'l1'
+
+hydra:
+  sweeper:
+    params:
+      stride: 2
+      context_length: 2
+      data.property: O1,O2
+      # context_length: 2,4,6,8,10
+      # data.property: O1,O2,O3
+  launcher:
+    timeout_min: 60
+    nodes: 1
+    tasks_per_node: 2
+    cpus_per_task: 10
+    gres: gpu:rtxa6000:1
+    partition: data-science
+    account: investigacion1

@@ -1,0 +1,59 @@
+# @package model
+defaults:
+  - encoder@net.encoder: vitl
+
+net:
+  _target_: intphyseval.model.jepa.net.JEPA
+  num_frames: 16
+  img_size: 224
+  patch_size: 16
+
+  normalize_enc: false
+  normalize_targets: true
+
+  encoder:
+    img_size: ${model.net.img_size}
+    patch_size: ${model.net.patch_size}
+    num_frames: ${model.net.num_frames}
+    # from the model constructor
+    
+    tubelet_size: 2
+    uniform_power: true
+    use_sdpa: true
+    is_causal: false
+
+    # defaults in eval.py
+    use_SiLU: false 
+    wide_SiLU: false
+  target_encoder: ${model.net.encoder}
+  predictor:
+    _target_: src.models.predictor.vit_predictor
+    # general by config
+    img_size: ${model.net.img_size}
+    patch_size: ${model.net.patch_size}
+    num_frames: ${model.net.num_frames}
+
+    tubelet_size: 2
+    uniform_power: true
+    use_sdpa: true
+    is_causal: false
+    depth: 12
+    # set by encoder
+    embed_dim: ${model.net.encoder.embed_dim}
+    num_heads: ${model.net.encoder.num_heads}
+    
+    # defaults in eval.py
+    predictor_embed_dim: 384
+    num_mask_tokens: 2
+    zero_init_mask_tokens: true
+    use_SiLU: false
+    use_rope: false # if "rope" in model_name
+    rope_is_1D: false # if "rope1D" in model_name
+    wide_SiLU: false
+    use_mask_tokens: true
+
+pretrained: true
+ckpt_kwargs: 
+  ckpt: ???
+
+
