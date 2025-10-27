@@ -15,7 +15,6 @@ from torch import Tensor
 import hydra
 from omegaconf import DictConfig, OmegaConf
 from hydra.utils import instantiate
-import torch.backends.cudnn as cudnn
 
 import lightning as L
 import wandb
@@ -264,6 +263,7 @@ def setup(cfg):
 
     # cuDNN optimization
     if cfg.get("cudnn_benchmark", False):
+        import torch.backends.cudnn as cudnn
         cudnn.benchmark = True
 
     fabric.launch()
