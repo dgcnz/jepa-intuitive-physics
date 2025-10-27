@@ -75,7 +75,7 @@ def create_masks(
         context_length,
         spatial_size=(patch_size, patch_size),
         temporal_dim=model_num_frames,
-        as_bool=False,
+        as_bool=as_bool,
     )
     full_mask = full_m.unsqueeze(0)
     m = m.unsqueeze(0)
