@@ -34,6 +34,8 @@ net:
     kwindow: 1
     # ***
     decoder_num_classes: 768 # from DINOv1
+    # *** 
+    world_size: 1
   target_encoder:
     _target_: intphyseval.model.sigma.net.DINOVideoEncoder
     model_name: "dino_vitb16"
