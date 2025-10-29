@@ -1,7 +1,7 @@
 # @package model
 
 defaults:
-  - sigma/target_encoder@net.target_encoder: dino
+  - /model/sigma/target_encoder@net.target_encoder: dino
 
 net:
   _target_: intphyseval.model.sigma.net.SIGMA
