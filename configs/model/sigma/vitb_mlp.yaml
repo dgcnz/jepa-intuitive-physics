@@ -1,6 +1,8 @@
+# @package model
+
 defaults:
   - model/sigma/vitb_dino
-  - target_encoder@net.target_encoder: mlp
+  - sigma/target_encoder@net.target_encoder: mlp
 
 net:
   target_type: "mlp"
