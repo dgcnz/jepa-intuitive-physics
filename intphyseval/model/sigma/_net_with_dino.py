@@ -1,6 +1,6 @@
 import torch
 import logging
-from intphyseval.model.sigma.net import PretrainVisionTransformer, DINOVideoEncoder
+from intphyseval.model.sigma.sigma import PretrainVisionTransformer, DINOVideoEncoder
 
 logger = logging.getLogger(__name__)
 logging.basicConfig()

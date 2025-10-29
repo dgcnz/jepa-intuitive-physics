@@ -1,0 +1,9 @@
+defaults:
+  - model/sigma/vitb_dino
+  - target_encoder@net.target_encoder: mlp
+
+net:
+  target_type: "mlp"
+  encoder:
+    num_prototypes: 4000 # this
+    eps: 0.05

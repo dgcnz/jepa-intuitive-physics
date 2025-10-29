@@ -1,0 +1,43 @@
+# @package _global_
+defaults:
+  - override /model: sigma/vitb_mlp
+  - override /data: intphys
+  - override /hydra/launcher: slurm
+  - _self_
+
+tags: ["intphys", "sigma", "vitb"]
+
+mask_as_bool: true
+surprise: 'cross_entropy_sk'
+data:
+  root: /home/diego.canez/datasets/intphys/dev
+
+model:
+  ckpt_kwargs: 
+    ckpt: /home/diego.canez/checkpoints/intphys/sigma/ssv2_vit_b_sigma_with_mlp.pth
+
+trainer:
+  loggers:
+    offline: true
+
+hydra:
+  mode: MULTIRUN
+  sweeper:
+    params:
+      stride: 2
+      context_length: 2,4,6,8,10
+      data.property: O1,O2,O3
+      # context_length: 2
+      # data.property: O1
+  launcher:
+    timeout_min: 60
+    nodes: 1
+    tasks_per_node: 1
+    cpus_per_task: 10
+    gres: gpu:rtxa6000:1
+    partition: data-science,gpu
+    account: investigacion1
+    setup:
+      - module load python3/3.11.11
+      - source ./venv/bin/activate
+

@@ -1,6 +1,6 @@
 # @package _global_
 defaults:
-  - override /model: sigma/vitb
+  - override /model: sigma/vitb_dino
   - override /data: intphys
   - override /hydra/launcher: slurm
   - _self_
@@ -38,7 +38,6 @@ hydra:
     partition: data-science,gpu
     account: investigacion1
     setup:
-      - echo "Hello World"
       - module load python3/3.11.11
       - source ./venv/bin/activate
 

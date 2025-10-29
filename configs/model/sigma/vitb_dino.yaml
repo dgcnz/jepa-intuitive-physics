@@ -1,9 +1,15 @@
 # @package model
+
+defaults:
+  - target_encoder@net.target_encoder: dino
+
 net:
-  _target_: intphyseval.model.sigma.net_with_dino.SIGMA
+  _target_: intphyseval.model.sigma.net.SIGMA
   num_frames: ${model.net.patch_size}
   img_size: 224
   patch_size: 16
+  target_type: "dino_v1" # dino_v1 or mlp
+  loss_func: "SWAV"
 
   encoder:
     _target_: intphyseval.model.sigma.net.PretrainVisionTransformer
@@ -25,7 +31,7 @@ net:
     decoder_depth: 4
     mask_ratio: 0.9
     mask_type: "tube"
-    target_type: "dino_v1"
+    target_type: ${model.net.target_type}
     loss_func: "SWAV"
     memory_size: 0
     num_prototypes: 3000
@@ -33,13 +39,9 @@ net:
     eps: 0.03
     kwindow: 1
     # ***
-    decoder_num_classes: 768 # from DINOv1
+    decoder_num_classes: ${model.net.target_encoder.output_dim} 
     # *** 
     world_size: 1
-  target_encoder:
-    _target_: intphyseval.model.sigma.net.DINOVideoEncoder
-    model_name: "dino_vitb16"
-    input_size: ${model.net.img_size}
 
 pretrained: true
 ckpt_kwargs: 

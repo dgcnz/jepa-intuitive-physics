@@ -1,0 +1,6 @@
+# @package target_encoder
+_target_: intphyseval.model.sigma.net.DINOVideoEncoder
+model_name: "dino_vitb16"
+input_size: ${model.net.img_size}
+output_dim: 768
+normalize_targets: true
