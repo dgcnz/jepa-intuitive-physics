@@ -5,7 +5,7 @@ defaults:
   - override /hydra/launcher: slurm
   - _self_
 
-tags: ["inflevel_lab", "jepa", "vitl"]
+tags: ["inflevel_lab", "sigma_dino", "vitb"]
 
 mask_as_bool: true
 surprise: cross_entropy_sk
@@ -14,7 +14,7 @@ data:
 
 model:
   ckpt_kwargs: 
-    ckpt: /home/diego.canez/checkpoints/intphys/jepa/vitl16.pth.tar
+    ckpt: /home/diego.canez/checkpoints/intphys/sigma/ssv2_vit_b_sigma_with_dino.pth
 
 trainer:
   loggers:
