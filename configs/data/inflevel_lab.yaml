@@ -15,6 +15,6 @@ frames_per_clip: ${eval:99//${data.frame_step}}
 dataloader:
   dataset:
     _target_: intphyseval.data.inflevel_dataset.InfLevelDataset
-    data_path: ${data.root}/${data.property}
+    data_path: ${data.root}
     transform:
       random_resize_aspect_ratio: [0.5, 2.0]
