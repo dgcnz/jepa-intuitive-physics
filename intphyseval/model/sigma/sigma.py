@@ -51,6 +51,7 @@ class PretrainVisionTransformerEncoder(nn.Module):
         use_checkpoint=False,
         mask_type="tube",
         use_learnable_pos_emb=False,
+        num_frames=16,
     ):
         super().__init__()
         self.num_classes = num_classes
@@ -63,6 +64,7 @@ class PretrainVisionTransformerEncoder(nn.Module):
             in_chans=in_chans,
             embed_dim=embed_dim,
             tubelet_size=tubelet_size,
+            num_frames=num_frames,
         )
         num_patches = self.patch_embed.num_patches
         self.use_checkpoint = use_checkpoint
@@ -326,6 +328,7 @@ class PretrainVisionTransformer(nn.Module):
         in_chans=0,  # avoid the error from create_fn in timm
         pretrained_cfg=None,  # avoid the error from create_fn in timm
         pretrained_cfg_overlay=None,  # avoid the error from create_fn in timm
+        num_frames=16,
     ):
         super().__init__()
         self.encoder = PretrainVisionTransformerEncoder(
@@ -348,6 +351,7 @@ class PretrainVisionTransformer(nn.Module):
             use_checkpoint=use_checkpoint,
             mask_type=mask_type,
             use_learnable_pos_emb=use_learnable_pos_emb,
+            num_frames=num_frames,
         )
 
         self.decoder = PretrainVisionTransformerDecoder(

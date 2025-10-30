@@ -1,6 +1,6 @@
 # @package model
 defaults:
-  - encoder@net.encoder: vitl
+  - /model/jepa/encoder@net.encoder: vitl
 
 net:
   _target_: intphyseval.model.jepa.net.JEPA

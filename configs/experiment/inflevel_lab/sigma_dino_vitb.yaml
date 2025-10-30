@@ -1,20 +1,20 @@
 # @package _global_
 defaults:
   - override /model: sigma/vitb_dino
-  - override /data: intphys
+  - override /data: inflevel_lab
   - override /hydra/launcher: slurm
   - _self_
 
-tags: ["intphys", "sigma", "vitb"]
+tags: ["inflevel_lab", "jepa", "vitl"]
 
 mask_as_bool: true
 surprise: cross_entropy_sk
 data:
-  root: /home/diego.canez/datasets/intphys/dev
+  root: /home/diego.canez/datasets/inflevel_lab/inflevel_lab
 
 model:
   ckpt_kwargs: 
-    ckpt: /home/diego.canez/checkpoints/intphys/sigma/ssv2_vit_b_sigma_with_dino.pth
+    ckpt: /home/diego.canez/checkpoints/intphys/jepa/vitl16.pth.tar
 
 trainer:
   loggers:
@@ -26,14 +26,13 @@ hydra:
     params:
       stride: 2
       context_length: 2,4,6,8,10
-      data.property: O1,O2,O3
-      # context_length: 2
-      # data.property: O1
+      data.property: continuity,gravity,solidity
   launcher:
     timeout_min: 60
     nodes: 1
     tasks_per_node: 1
-    cpus_per_task: 10
+    # total cpus 96
+    cpus_per_task: 16
     gres: gpu:rtxa6000:1
     partition: data-science,gpu
     account: investigacion1

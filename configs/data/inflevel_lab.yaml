@@ -1,0 +1,20 @@
+# @package data
+defaults:
+  - /data/_base
+  - _self_
+
+name: inflevel_lab
+
+root: ???
+property: ???
+
+# sampling
+frame_step: 5
+frames_per_clip: ${eval:99//${data.frame_step}} 
+
+dataloader:
+  dataset:
+    _target_: intphyseval.data.inflevel_dataset.InfLevelDataset
+    data_path: ${data.root}/${data.property}
+    transform:
+      random_resize_aspect_ratio: [0.5, 2.0]
