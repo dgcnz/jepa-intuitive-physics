@@ -18,6 +18,7 @@ model:
 
 trainer:
   loggers:
+    project: "ipe-inflevel"
     offline: true
 
 hydra:
@@ -28,7 +29,7 @@ hydra:
       context_length: 2,4,6,8,10
       data.property: continuity,gravity,solidity
   launcher:
-    timeout_min: 60
+    timeout_min: 360
     nodes: 1
     tasks_per_node: 1
     cpus_per_task: 8
