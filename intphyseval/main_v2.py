@@ -135,8 +135,8 @@ def extract_losses_single(
         preds, targets = net(pieces, masks_enc, masks_pred, full_mask)
         # Reshape [B, N, D] -> [V, num_windows, N, D]
         num_windows = preds.shape[0] // V
-        preds = preds.view(V, num_windows, *preds.shape[1:])
-        targets = targets.view(V, num_windows, *targets.shape[1:])
+        preds = preds.unflatten(0, (V, num_windows))
+        targets = targets.unflatten(0, (V, num_windows))
         loss = surprise(preds, targets).detach()
 
         losses = loss.unsqueeze(1)  # [num_videos, n_ctxt=1, n_windows]

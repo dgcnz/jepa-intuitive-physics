@@ -1,7 +1,7 @@
 # @package _global_
 defaults:
   - _self_
-  - model: jepa_vitl
+  - model: jepa/vitl
   - data: intphys
   - experiment: null
 
@@ -10,6 +10,7 @@ context_length: 6
 surprise: 'l1'
 seed: 0
 tags: null
+mask_as_bool: false
 
 data:
   root: /mnt/sdb1/datasets/int-phys/dev
@@ -41,6 +42,7 @@ trainer:
     project: "intuitive-physics"
     log_model: False
     tags: ${tags}
+    offline: true
 
 task_name: "intuitive-physics-eval"
 

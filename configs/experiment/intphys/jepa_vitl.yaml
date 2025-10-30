@@ -1,6 +1,6 @@
 # @package _global_
 defaults:
-  - override /model: jepa_vitl
+  - override /model: jepa/vitl
   - override /data: intphys
   - override /hydra/launcher: slurm
   - _self_
