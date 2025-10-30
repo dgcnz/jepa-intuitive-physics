@@ -96,8 +96,10 @@ class InfLevelDataset(torch.utils.data.Dataset):
         self.shared_transform = shared_transform
         self.property = property
         self.priming = priming
-        
-        self.metadatas = pd.read_csv(f"{os.path.abspath(os.path.dirname(__file__))}/../../auxiliary_data_loading_files/inflevel/{self.property}.csv")
+
+        meta_path = pathlib.Path(__file__).parent.resolve()
+        meta_path = meta_path / "metadata" / "inflevel" / f"{property}.csv"
+        self.metadatas = pd.read_csv(meta_path)
 
         self.length_clip = self.frames_per_clip*self.frame_step
         
