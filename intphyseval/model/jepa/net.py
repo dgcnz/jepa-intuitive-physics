@@ -82,6 +82,14 @@ class JEPA(torch.nn.Module):
             sd = {k.replace("module.", ""): v for k, v in sd.items()}
             # for MultiMask checkpoints
             sd = {k.replace("backbone.", ""): v for k, v in sd.items()}
+            # JEPA's pos_embed is mismatched if num_frames != 16, 
+            # but for non-ROPE variants it's fixed sin-cos,
+            # so we can just skip loading it
+            # we'll just replace them with the model's own pos_embed
+            if 'pos_embed' in sd:
+                sd['pos_embed'] = self.encoder.pos_embed
+            if 'predictor_pos_embed' in sd:
+                sd['predictor_pos_embed'] = self.predictor.predictor_pos_embed
             return sd
 
         logger.info(f"Loading JEPA checkpoint from {ckpt}")
