@@ -4,5 +4,5 @@ defaults:
 
 net:
   encoder:
-    embed_dim: 1024
-    depth: 24
+    embed_dim: 1280
+    depth: 32
