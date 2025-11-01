@@ -94,6 +94,9 @@ def cross_entropy_sk(preds, targets):
 def l1_features(preds, targets):
     return F.l1_loss(preds, targets, reduction="none").mean((2, 3))
 
+def l1_dense_features(preds, targets):
+    return F.l1_loss(preds, targets, reduction="none").mean(-1)
+
 
 @torch.no_grad()
 def extract_losses_single(
@@ -261,8 +264,12 @@ def run_eval(cfg):
         log.info("Running eval")
 
     # Single run over provided loader
-    assert cfg.surprise in ['cross_entropy_sk', 'l1'], "Surprise function not recognized"
-    surprise = cross_entropy_sk if cfg.surprise == 'cross_entropy_sk' else l1_features
+    surprises = {
+        'cross_entropy_sk': cross_entropy_sk,
+        'l1': l1_features,
+        'l1_dense': l1_dense_features,
+    }
+    surprise = surprises[cfg.surprise]
     all_losses, all_labels = extract_losses_single(
         fabric=fabric,
         net=net,
@@ -292,6 +299,8 @@ def run_eval(cfg):
         },
         output_dir / "losses.pth",
     )
+    if not cfg.compute_metrics:
+        return
     metrics = compute_metrics(all_losses[:, 0], all_labels)
     if fabric.is_global_zero:
         fabric.log_dict(metrics)

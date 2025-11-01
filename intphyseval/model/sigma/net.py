@@ -250,6 +250,7 @@ def sigma_with_mlp(p="/mnt/sdb1/checkpoint/intphys/ssv2_vit_b_sigma_with_mlp.pth
 
 def sigma_with_dino(
     p="/mnt/sdb1/checkpoint/intphys/sigma_ssv2_vit_b_sigma_with_dino.pth",
+    num_frames: int =16,
 ):
     # batch_size=40,
     # model="pretrain_videomae_base_patch16_224",
@@ -301,9 +302,10 @@ def sigma_with_dino(
             kwindow=1,
             # ***
             decoder_num_classes=768,  # from DINOv1
+            num_frames=num_frames,
         ),
         target_encoder=DINOVideoEncoder("dino_vitb16", input_size=224),
-        num_frames=16,
+        num_frames=num_frames,
         img_size=224,
         patch_size=16,
         target_type="dino_v1",
@@ -315,5 +317,5 @@ def sigma_with_dino(
 
 
 if __name__ == "__main__":
-    sigma_with_dino()
+    sigma_with_dino(num_frames=32)
     sigma_with_mlp()

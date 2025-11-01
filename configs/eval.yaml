@@ -11,6 +11,7 @@ surprise: 'l1'
 seed: 0
 tags: null
 mask_as_bool: false
+compute_metrics: true
 
 data:
   root: /mnt/sdb1/datasets/int-phys/dev
