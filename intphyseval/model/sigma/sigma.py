@@ -3,7 +3,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch.utils.checkpoint as checkpoint
 from functools import partial
-from evals.intuitive_physics.videomae import (
+from intphyseval.model.mae.videomae import (
     Block,
     PatchEmbed,
     get_sinusoid_encoding_table,

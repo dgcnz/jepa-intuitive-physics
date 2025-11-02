@@ -44,6 +44,7 @@ net:
     tubelet_size: ${model.net.tubelet_size}
     num_classes: 0  # avoid timm create_fn error
     in_chans: 0  # avoid timm create_fn error
+    num_frames: ${model.net.num_frames}
 
 pretrained: true
 ckpt_kwargs:

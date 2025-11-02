@@ -15,6 +15,7 @@ net:
     _target_: intphyseval.model.sigma.net.PretrainVisionTransformer
     img_size: ${model.net.img_size}
     patch_size: ${model.net.patch_size}
+    tubelet_size: 2
     encoder_embed_dim: 768
     encoder_depth: 12
     encoder_num_heads: 12

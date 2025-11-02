@@ -36,12 +36,12 @@ class PretrainVisionTransformerEncoder(nn.Module):
     def __init__(self, img_size=224, patch_size=16, in_chans=3, num_classes=0, embed_dim=768, depth=12,
                  num_heads=12, mlp_ratio=4., qkv_bias=False, qk_scale=None, drop_rate=0., attn_drop_rate=0.,
                  drop_path_rate=0., norm_layer=nn.LayerNorm, init_values=None, tubelet_size=2, use_checkpoint=False,
-                 use_learnable_pos_emb=False):
+                 use_learnable_pos_emb=False, num_frames=16):
         super().__init__()
         self.num_classes = num_classes
         self.num_features = self.embed_dim = embed_dim  # num_features for consistency with other models
         self.patch_embed = PatchEmbed(
-            img_size=img_size, patch_size=patch_size, in_chans=in_chans, embed_dim=embed_dim,tubelet_size=tubelet_size)
+            img_size=img_size, patch_size=patch_size, in_chans=in_chans, embed_dim=embed_dim,tubelet_size=tubelet_size, num_frames=num_frames)
         num_patches = self.patch_embed.num_patches
         self.use_checkpoint = use_checkpoint
 
@@ -220,6 +220,7 @@ class PretrainVisionTransformer(nn.Module):
                  tubelet_size=2,
                  num_classes=0, # avoid the error from create_fn in timm
                  in_chans=0, # avoid the error from create_fn in timm
+                 num_frames=16,
                  ):
         super().__init__()
         self.encoder = PretrainVisionTransformerEncoder(
@@ -240,7 +241,9 @@ class PretrainVisionTransformer(nn.Module):
             init_values=init_values,
             tubelet_size=tubelet_size,
             use_checkpoint=use_checkpoint,
-            use_learnable_pos_emb=use_learnable_pos_emb)
+            use_learnable_pos_emb=use_learnable_pos_emb,
+            num_frames=num_frames,
+            )
 
         self.decoder = PretrainVisionTransformerDecoder(
             patch_size=patch_size, 
