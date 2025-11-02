@@ -5,7 +5,7 @@ defaults:
   - override /hydra/launcher: slurm
   - _self_
 
-tags: ["intphys", "sigma", "vitb"]
+tags: ["intphys", "sigma_mlp", "vitb"]
 
 mask_as_bool: true
 surprise: 'cross_entropy_sk'
