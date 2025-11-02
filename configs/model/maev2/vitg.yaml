@@ -1,0 +1,51 @@
+# @package model
+# VideoMAE v2 Giant (ViT-g/14) configuration
+
+defaults:
+  - /model/maev2/target_encoder@net.target_encoder: pixel
+
+net:
+  _target_: intphyseval.model.mae.net.VideoMAE
+  num_frames: 16
+  img_size: 224
+  patch_size: 14
+  tubelet_size: 2
+  decoder_blocks: -1  # -1 for pixel prediction, >0 for latent prediction
+
+  encoder:
+    _target_: intphyseval.model.mae.videomae.PretrainVisionTransformer
+    img_size: ${model.net.img_size}
+    patch_size: ${model.net.patch_size}
+    encoder_in_chans: 3
+    encoder_num_classes: 0
+    # VideoMAE v2 Giant architecture
+    encoder_embed_dim: 1408
+    encoder_depth: 40
+    encoder_num_heads: 16
+    # Decoder configuration
+    decoder_embed_dim: 512
+    decoder_depth: 4  # Pretrained checkpoint has 4 decoder blocks
+    decoder_num_heads: 8
+    decoder_num_classes: 1176  # 14 * 14 * 3 * 2 (patch_size^2 * channels * tubelet_size)
+    # Other parameters
+    mlp_ratio: ${eval:48/11}  # 48/11 for Giant model
+    qkv_bias: True
+    qk_scale: null
+    drop_rate: 0.0
+    attn_drop_rate: 0.0
+    drop_path_rate: 0.0
+    norm_layer:
+      _target_: torch.nn.LayerNorm
+      _partial_: true
+      eps: 1e-6
+    init_values: 0.0
+    use_learnable_pos_emb: False
+    use_checkpoint: False
+    tubelet_size: ${model.net.tubelet_size}
+    num_classes: 0  # avoid timm create_fn error
+    in_chans: 0  # avoid timm create_fn error
+
+pretrained: true
+ckpt_kwargs:
+  ckpt: ???  # Path to checkpoint should be provided via command line or config override
+  enc_checkpoint_key: model
