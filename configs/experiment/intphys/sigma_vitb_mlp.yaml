@@ -18,6 +18,7 @@ model:
 
 trainer:
   loggers:
+    project: ipe-intphys
     offline: true
 
 hydra:
