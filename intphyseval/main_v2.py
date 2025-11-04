@@ -91,10 +91,19 @@ def cross_entropy_sk(preds, targets):
     return F.cross_entropy(preds.permute(0, 3, 1, 2), targets, reduction="none").mean(2)
 
 
+def cross_entropy_sk_dense(
+    preds: Float[Tensor, "V num_windows N num_prototypes"], targets
+) -> Float[Tensor, "V num_windows N"]:
+    return F.cross_entropy(preds.permute(0, 3, 1, 2), targets, reduction="none")
+
+
 def l1_features(preds, targets):
     return F.l1_loss(preds, targets, reduction="none").mean((2, 3))
 
-def l1_dense_features(preds, targets):
+
+def l1_dense_features(
+    preds: Float[Tensor, "V num_windows N D"], targets
+) -> Float[Tensor, "V num_windows N"]:
     return F.l1_loss(preds, targets, reduction="none").mean(-1)
 
 
@@ -108,7 +117,7 @@ def extract_losses_single(
     patch_size: int,
     model_num_frames: int,
     mask_as_bool: bool,
-    surprise: Callable[[tuple[Tensor, Tensor]], Tensor]
+    surprise: Callable[[tuple[Tensor, Tensor]], Tensor],
 ):
     all_labels = []
     all_losses = []
@@ -265,9 +274,10 @@ def run_eval(cfg):
 
     # Single run over provided loader
     surprises = {
-        'cross_entropy_sk': cross_entropy_sk,
-        'l1': l1_features,
-        'l1_dense': l1_dense_features,
+        "cross_entropy_sk": cross_entropy_sk,
+        "cross_entropy_sk_dense": cross_entropy_sk_dense,
+        "l1": l1_features,
+        "l1_dense": l1_dense_features,
     }
     surprise = surprises[cfg.surprise]
     all_losses, all_labels = extract_losses_single(
@@ -279,7 +289,7 @@ def run_eval(cfg):
         patch_size=net.patch_size,
         model_num_frames=net.num_frames,
         mask_as_bool=cfg.mask_as_bool,
-        surprise=surprise
+        surprise=surprise,
     )
     if fabric.is_global_zero:
         log.info("Syncing outputs")
