@@ -5,6 +5,7 @@ from typing import List
 
 import pandas as pd
 from decord import VideoReader, cpu
+from tqdm import tqdm
 
 
 log = logging.getLogger("generate_metadata_grasp")
@@ -30,7 +31,7 @@ def main():
     assert props, f"No P_* properties found under {root}"
 
     rows: List[dict] = []
-    for prop in props:
+    for prop in tqdm(props, desc="Processing properties"):
         p_dir = root / f"P_{prop}"
         ip_dir = root / f"IP_{prop}"
         assert ip_dir.exists(), f"Missing IP_{prop} for property {prop}"

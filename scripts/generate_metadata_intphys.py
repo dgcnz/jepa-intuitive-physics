@@ -8,6 +8,7 @@ import numpy as np
 import pandas as pd
 import torch
 from PIL import Image
+from tqdm import tqdm
 
 from intphyseval.utils import get_breaking_points, get_matches
 
@@ -84,7 +85,7 @@ def main():
     for prop in sorted(["O1", "O2", "O3"]):
         prop_dir = root / prop
         scenes = sorted([d.name for d in prop_dir.iterdir() if d.is_dir()])
-        for scene in scenes:
+        for scene in tqdm(scenes, desc=f"Processing {prop}"):
             pairs, labels = _infer_pairs_for_scene(root, prop, scene)
 
             # For match uniqueness: (int(scene) - 1) * 2 + pair

@@ -5,6 +5,7 @@ from typing import List
 
 import pandas as pd
 from decord import VideoReader, cpu
+from tqdm import tqdm
 
 
 log = logging.getLogger("generate_metadata_inflevel")
@@ -39,12 +40,12 @@ def main():
     assert csv_files, f"No property CSVs found under {meta_dir}"
 
     rows: List[dict] = []
-    for csv_path in csv_files:
+    for csv_path in tqdm(csv_files, desc="Processing properties"):
         prop = csv_path.stem
         df = pd.read_csv(csv_path)
 
         # preserve original row order; match = row index
-        for row_idx, row in df.iterrows():
+        for row_idx, row in tqdm(df.iterrows(), total=len(df), desc=f"  {prop}", leave=False):
             # vid1 as video=0
             v1_rel = row["vid1_path"]
             v1_abs = root / v1_rel
