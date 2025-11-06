@@ -41,5 +41,5 @@ hydra:
     setup:
       - echo "Hello World"
       - module load python3/3.11.11
-      - source ./venv/bin/activate
+      - source .venv/bin/activate
 
