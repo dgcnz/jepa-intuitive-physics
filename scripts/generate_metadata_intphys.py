@@ -111,7 +111,6 @@ def main():
 
     # Sort rows: property ASC, scene lexicographic ASC, video ASC
     df = pd.DataFrame(rows)
-    df = df.sort_values(by=["property", "scene", "video"]).reset_index(drop=True)
 
     # Final validations
     assert (df["frames"] > 0).all(), "All videos must have >0 frames"

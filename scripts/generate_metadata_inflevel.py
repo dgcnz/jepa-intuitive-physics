@@ -32,12 +32,10 @@ def main():
     root = Path(args.root)
     out_path = Path(args.output)
 
-    # Where the original pair CSVs live
     meta_dir = Path("intphyseval/data/metadata/inflevel")
-    assert meta_dir.exists(), f"Missing metadata directory: {meta_dir}"
-
-    csv_files = sorted([p for p in meta_dir.iterdir() if p.suffix == ".csv" and p.name not in {"meta.csv"}])
-    assert csv_files, f"No property CSVs found under {meta_dir}"
+    csv_files = [meta_dir / f"{prop}.csv" for prop in ["continuity", "gravity", "solidity"]]
+    for csv_file in csv_files:
+        assert csv_file.exists(), f"Missing property CSV: {csv_file}"
 
     rows: List[dict] = []
     for csv_path in tqdm(csv_files, desc="Processing properties"):
@@ -92,7 +90,7 @@ def main():
 
     # Ordering: by property ASC; within property preserve the CSV row order; within each pair emit video 0 then 1
     df = pd.DataFrame(rows)
-    df = df.sort_values(by=["property"]).reset_index(drop=True)
+    # rows are already sorted by property and match
 
     # Validations
     assert (df["frames"] > 0).all(), "All InfLevel videos must have >0 frames"

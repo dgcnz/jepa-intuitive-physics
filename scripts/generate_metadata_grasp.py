@@ -77,9 +77,8 @@ def main():
                 }
             )
 
-    # Sort: property ASC, then scene (lexicographic), then video ASC
     df = pd.DataFrame(rows)
-    df = df.sort_values(by=["property", "scene", "video"]).reset_index(drop=True)
+    # already sorted by property, scene
 
     # Validations
     assert (df["frames"] > 0).all(), "All GRASP videos must have >0 frames"
