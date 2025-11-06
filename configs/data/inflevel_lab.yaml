@@ -19,3 +19,12 @@ dataloader:
     property: ${data.property}
     transform:
       random_resize_aspect_ratio: [0.5, 2.0]
+
+# v3 stuff
+batch_size: 16
+data_fn:
+  _target_:  intphyseval.data.inflevel_dataset_v2.get_videos_inflevel
+  root: ${data.root}
+  property: ${data.property}
+  meta_path: intphyseval/data/metadata/inflevel/meta.csv
+  _partial_: True

@@ -19,3 +19,13 @@ dataloader:
     property: ${data.property}
     transform:
       random_resize_aspect_ratio: [1.0, 1.0]
+
+# v3 
+
+batch_size: 16
+data_fn:
+  _target_:  intphyseval.data.grasp_dataset_v2.get_videos_grasp
+  root: ${data.root}
+  property: ${data.property}
+  meta_path: intphyseval/data/metadata/grasp/meta.csv
+  _partial_: True

@@ -97,7 +97,10 @@ def cross_entropy_sk_dense(
     return F.cross_entropy(preds.permute(0, 3, 1, 2), targets, reduction="none")
 
 
-def l1_features(preds, targets):
+def l1_features(
+    preds: Float[Tensor, "V num_windows N D"],
+    targets: Float[Tensor, "V num_windows N D"],
+) -> Float[Tensor, "V num_windows"]:
     return F.l1_loss(preds, targets, reduction="none").mean((2, 3))
 
 
