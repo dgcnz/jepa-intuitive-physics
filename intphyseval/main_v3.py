@@ -42,6 +42,11 @@ def cross_entropy_sk_dense(
 ) -> Float[Tensor, "B"]:  # noqa: F821
     return F.cross_entropy(preds.permute(0, 2, 1), targets, reduction="none")
 
+def cross_entropy_sk(
+    preds: Float[Tensor, "B N C"], targets: Float[Tensor, "B N"]
+) -> Float[Tensor, "B"]:  # noqa: F821
+    return F.cross_entropy(preds.permute(0, 2, 1), targets, reduction="none").mean(-1)
+
 
 @torch.no_grad()
 def compute_losses(
