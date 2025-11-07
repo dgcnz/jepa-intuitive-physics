@@ -1,6 +1,6 @@
 import logging
 from pathlib import Path
-
+import wandb
 import numpy as np
 import torch
 import torch.nn.functional as F
@@ -258,7 +258,16 @@ def run_eval(cfg):
 
 @hydra.main(config_path="../configs", config_name="eval", version_base=None)
 def main(cfg: DictConfig):
-    run_eval(cfg)
+    try:
+        run_eval(cfg)
+    except KeyboardInterrupt:
+        pass
+    except Exception as e:
+        log.exception(e)
+        raise e
+    finally:
+        if wandb.run:
+            wandb.finish()
 
 
 if __name__ == "__main__":
