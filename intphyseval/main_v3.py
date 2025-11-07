@@ -211,6 +211,7 @@ def run_eval(cfg):
     surprises = {
         "l1": l1_features,
         "l1_dense": l1_features_dense,
+        "cross_entropy_sk": cross_entropy_sk, 
         "cross_entropy_sk_dense": cross_entropy_sk_dense,
     }
     surprise = surprises[cfg.surprise]
