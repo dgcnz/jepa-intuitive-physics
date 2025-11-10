@@ -43,6 +43,7 @@ dependencies = [
 
 [dependency-groups]
 dev = [
+    "aquarel>=0.0.7",
     "ipykernel>=7.0.1",
     "pip>=25.2",
 ]

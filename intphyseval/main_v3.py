@@ -28,19 +28,21 @@ log = logging.getLogger(__name__)
 log.setLevel(logging.INFO)
 
 
-
 def l1_features(
     preds: Float[Tensor, "B N D"], targets: Float[Tensor, "B N D"]
 ) -> Float[Tensor, "B"]:  # noqa: F821
     return F.l1_loss(preds, targets, reduction="none").mean((-2, -1))
 
+
 def l1_features_dense(preds, targets):
     return F.l1_loss(preds, targets, reduction="none").mean((-1))
+
 
 def cross_entropy_sk_dense(
     preds: Float[Tensor, "B N C"], targets: Float[Tensor, "B N"]
 ) -> Float[Tensor, "B"]:  # noqa: F821
     return F.cross_entropy(preds.permute(0, 2, 1), targets, reduction="none")
+
 
 def cross_entropy_sk(
     preds: Float[Tensor, "B N C"], targets: Float[Tensor, "B N"]
@@ -146,7 +148,6 @@ def setup(cfg):
     return fabric
 
 
-
 def run_eval(cfg):
     output_dir = Path(cfg.paths.output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -211,7 +212,7 @@ def run_eval(cfg):
     surprises = {
         "l1": l1_features,
         "l1_dense": l1_features_dense,
-        "cross_entropy_sk": cross_entropy_sk, 
+        "cross_entropy_sk": cross_entropy_sk,
         "cross_entropy_sk_dense": cross_entropy_sk_dense,
     }
     surprise = surprises[cfg.surprise]
@@ -269,6 +270,7 @@ def main(cfg: DictConfig):
     except KeyboardInterrupt:
         pass
     except Exception as e:
+        # this is important for hydra-submitit
         log.exception(e)
         raise e
     finally:
