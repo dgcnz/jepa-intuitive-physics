@@ -1,0 +1,31 @@
+# @package data
+defaults:
+  - /data/_base
+  - _self_
+
+name: grasp
+
+root: ???
+property: ???
+
+# sampling
+frame_step: 10
+frames_per_clip: ${eval:99//${data.frame_step}} 
+
+dataloader:
+  dataset:
+    _target_: intphyseval.data.grasp_dataset.GRASPDataset
+    data_path: ${data.root}
+    property: ${data.property}
+    transform:
+      random_resize_aspect_ratio: [1.0, 1.0]
+
+# v3 
+
+batch_size: 16
+data_fn:
+  _target_:  intphyseval.data.grasp_dataset_v2.get_videos_grasp
+  root: ${data.root}
+  property: ${data.property}
+  meta_path: intphyseval/data/metadata/grasp/meta.csv
+  _partial_: True

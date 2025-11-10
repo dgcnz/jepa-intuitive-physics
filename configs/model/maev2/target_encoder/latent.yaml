@@ -1,0 +1,4 @@
+# @package target_encoder
+_target_: intphyseval.model.mae.net.LatentTargetEncoder
+encoder: ${model.net.encoder}
+decoder_blocks: 4

@@ -83,7 +83,7 @@ class VideoTransform(object):
             device='cpu',
         )
 
-    def __call__(self, buffer):
+    def __call__(self, buffer: torch.Tensor):
 
         if self.auto_augment:
             buffer = [transforms.ToPILImage()(frame) for frame in buffer]
@@ -92,7 +92,10 @@ class VideoTransform(object):
             buffer = torch.stack(buffer)  # T C H W
             buffer = buffer.permute(0, 2, 3, 1)  # T H W C
         else:
-            buffer = torch.tensor(buffer, dtype=torch.float32)
+            if isinstance(buffer, torch.Tensor):
+                buffer = buffer.to(torch.float32, copy=True)
+            else:
+                buffer = torch.tensor(buffer, dtype=torch.float32)
 
         buffer = buffer.permute(3, 0, 1, 2)  # T H W C -> C T H W
 

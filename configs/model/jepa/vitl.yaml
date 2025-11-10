@@ -1,0 +1,8 @@
+# @package model
+defaults:
+  - /model/jepa/_base
+
+net:
+  encoder:
+    embed_dim: 1024
+    depth: 24

@@ -1,0 +1,42 @@
+# @package _global_
+defaults:
+  - override /model: maev2/vitg
+  - override /data: intphys
+  - override /hydra/launcher: slurm
+  - _self_
+
+tags: ["intphys", "maev2", "vitg"]
+
+mask_as_bool: true
+surprise: l1
+data:
+  root: /home/diego.canez/datasets/intphys/dev
+
+model:
+  ckpt_kwargs: 
+    ckpt: /home/diego.canez/checkpoints/intphys/videomaev2/vit_g_hybrid_pt_1200e.pth
+
+trainer:
+  loggers:
+    project: ipe-intphys
+    offline: true
+
+hydra:
+  mode: MULTIRUN
+  sweeper:
+    params:
+      stride: 2
+      context_length: 2,4,6,8,10
+      data.property: O1,O2,O3
+  launcher:
+    timeout_min: 60
+    nodes: 1
+    tasks_per_node: 1
+    cpus_per_task: 10
+    gres: gpu:rtxa6000:1
+    partition: data-science,gpu
+    account: investigacion1
+    setup:
+      - module load python3/3.11.11
+      - source .venv/bin/activate
+

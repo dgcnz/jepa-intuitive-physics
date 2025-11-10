@@ -1,0 +1,28 @@
+pretrain:
+  enc_checkpoint_key: encoder
+  pred_checkpoint_key: predictor
+  model_name: vit_huge
+  patch_size: 16
+  folder: /home/diego.canez/checkpoints/intphys/jepa
+  checkpoint: vith16.pth.tar
+  write_tag: jepa_vith
+  use_sdpa: true
+  uniform_power: true
+  is_causal: false
+  pred_is_causal: false
+  pred_depth: 12
+  tubelet_size: 2
+  frames_per_clip: 16
+data:
+  batch_size: 1
+  resolution: 224
+  stride_sliding_window: 2
+  use_bfloat16: true
+  frames_per_clip: 16
+  context_lengths: [2,4,6,8,10]
+  frame_steps: 10
+dataset: grasp
+tag: jepa_vith
+nodes: 1
+tasks_per_node: 1
+eval_name: intuitive_physics

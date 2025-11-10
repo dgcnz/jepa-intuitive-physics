@@ -1,0 +1,42 @@
+# @package _global_
+defaults:
+  - override /model: sigma/vitb_dino
+  - override /data: inflevel_lab
+  - override /hydra/launcher: slurm
+  - _self_
+
+tags: ["inflevel_lab", "sigma_dino", "vitb"]
+
+mask_as_bool: true
+surprise: cross_entropy_sk
+data:
+  root: /home/diego.canez/datasets/inflevel_lab/inflevel_lab
+
+model:
+  ckpt_kwargs: 
+    ckpt: /home/diego.canez/checkpoints/intphys/sigma/ssv2_vit_b_sigma_with_dino.pth
+
+trainer:
+  loggers:
+    offline: true
+
+hydra:
+  mode: MULTIRUN
+  sweeper:
+    params:
+      stride: 2
+      context_length: 2,4,6,8,10
+      data.property: continuity,gravity,solidity
+  launcher:
+    timeout_min: 60
+    nodes: 1
+    tasks_per_node: 1
+    # total cpus 96
+    cpus_per_task: 16
+    gres: gpu:rtxa6000:1
+    partition: data-science,gpu
+    account: investigacion1
+    setup:
+      - module load python3/3.11.11
+      - source .venv/bin/activate
+

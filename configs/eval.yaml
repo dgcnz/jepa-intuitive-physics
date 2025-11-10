@@ -1,0 +1,55 @@
+# @package _global_
+defaults:
+  - _self_
+  - model: jepa/vitl
+  - data: intphys
+  - experiment: null
+
+stride: 2
+context_length: 6
+surprise: 'l1'
+seed: 0
+tags: null
+mask_as_bool: false
+compute_metrics: true
+
+data:
+  root: /mnt/sdb1/datasets/int-phys/dev
+  property: O1
+
+model:
+  ckpt_kwargs: 
+    ckpt: /mnt/sdb1/checkpoint/intphys/jepa_vitl16.pth.tar 
+
+paths:
+  root_dir: ${oc.env:PROJECT_ROOT}
+  log_dir: ${paths.root_dir}/logs
+  output_dir: ${hydra:runtime.output_dir}
+  work_dir: ${hydra:runtime.cwd}
+
+float32_matmul_precision: high
+allow_tf32: true
+cudnn_benchmark: false
+compile: false
+
+# Eval controls
+trainer:
+  precision: 16-mixed
+  accelerator: auto
+  strategy: auto
+  loggers:
+    _target_: wandb.integration.lightning.fabric.WandbLogger
+    save_dir: "${paths.output_dir}"
+    project: "intuitive-physics"
+    log_model: False
+    tags: ${tags}
+    offline: true
+
+task_name: "intuitive-physics-eval"
+
+hydra:
+  run:
+    dir: ${paths.log_dir}/${task_name}/runs/${now:%Y-%m-%d}_${now:%H-%M-%S}
+  sweep:
+    dir: ${paths.log_dir}/${task_name}/multiruns/${now:%Y-%m-%d}_${now:%H-%M-%S}
+    subdir: ${hydra:job.num}
