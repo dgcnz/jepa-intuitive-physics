@@ -77,7 +77,7 @@ class SlidingWindowVideoDataset(Dataset):
         video_idx, sample_idx = self.flat_index[flat_idx]
         sample = self._load_sample(video_idx, sample_idx)
         return self._apply_transform(sample)
-    
+
     def _apply_transform(self, frames: Tensor) -> Tensor:
         if self.transform:
             frames = self.transform(frames)
@@ -100,14 +100,15 @@ class SlidingWindowVideoDataset(Dataset):
         """
         return self._load_frames(video_idx, sample_idx * self.stride, self.num_frames)
 
-    def _load_clip(self, video_idx: int) -> Tensor:
+    def _load_clip(self, video_idx: int, with_tx: bool = False) -> Tensor:
         """
         Load entire subsampled clip from video.
 
         :param video_idx: Index of video in the list
         :return: Tensor of shape [T, H, W, C]
         """
-        return self._load_frames(video_idx, 0, self.clip_lengths[video_idx])
+        clip = self._load_frames(video_idx, 0, self.clip_lengths[video_idx])
+        return clip if not with_tx else self._apply_transform(clip)
 
     def _load_frames(
         self, video_idx: int, start_frame_offset: int, num_frames: int
