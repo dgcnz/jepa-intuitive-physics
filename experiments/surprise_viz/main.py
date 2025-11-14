@@ -108,7 +108,7 @@ def losses_to_grid(
     # T_prime, C_prime, = [f // tubelet_size for f in [num_frames, ctx_len]]
     P_prime = (num_frames - context_len) // tubelet_size
     N_expected = P_prime * H_grid * W_grid
-    assert pair_losses.shape[2] == N_expected
+    assert pair_losses.shape[2] == N_expected, (pair_losses.shape, N_expected)
     return pair_losses.view(2, -1, P_prime, H_grid, W_grid)
 
 
@@ -473,7 +473,7 @@ def load_dataset(cfg):
     matches = matches[canon_order]
     labels = labels[canon_order]
 
-    transform = instantiate(cfg.data.dataloader.dataset.transform)
+    transform = instantiate(cfg.data.transform)
     videos = dataset_kwargs["videos"]
     assert "start_frames" not in dataset_kwargs, "not supported"
     assert "end_frames" not in dataset_kwargs, "not supported"

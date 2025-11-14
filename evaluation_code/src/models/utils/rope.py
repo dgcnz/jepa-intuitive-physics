@@ -43,7 +43,7 @@ def rotate_half(x):
 
 #disable if using python 3.12 or higher
 #@torch.compile(disable=sys.version_info[1] >= 12)
-@autocast(enabled=False)
+@torch.amp.autocast('cuda', enabled=False)
 def apply_rotary_emb(freqs, t, start_index=0, scale=1., seq_dim=-2):
     if t.ndim == 3:
         seq_len = t.shape[seq_dim]
@@ -265,7 +265,7 @@ class RotaryEmbedding(Module):
         all_freqs = broadcast_tensors(*all_freqs)
         return torch.cat(all_freqs, dim=-1)
 
-    @autocast(enabled=False)
+    @torch.autocast('cuda', enabled=False)
     def forward(
         self,
         t: Tensor,

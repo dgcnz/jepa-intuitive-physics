@@ -1,0 +1,44 @@
+# @package _global_
+defaults:
+  - override /model: jepa/vith
+  - override /data: intphys2
+  - _self_
+
+tags: ["intphys2", "jepa", "vith"]
+
+mask_as_bool: false
+surprise: l1
+data:
+  root: /home/diego.canez/datasets/intphys2
+  # root: /mnt/sdb1/datasets/intphys2
+
+model:
+  ckpt_kwargs:
+    ckpt: /home/diego.canez/checkpoints/intphys/jepa/vith16.pth.tar
+
+
+trainer:
+  loggers:
+    project: ipe-intphys2
+    offline: true
+
+hydra:
+  mode: MULTIRUN
+  sweeper:
+    params:
+      stride: 2
+      context_length: 2,4,6,8,10
+      data.property: continuity,immutability,permanence,solidity
+  launcher:
+    timeout_min: 60
+    nodes: 1
+    tasks_per_node: 1
+    cpus_per_task: 10
+    gres: gpu:rtxa6000:1
+    partition: data-science,gpu
+    account: investigacion1
+    setup:
+      - module load python3/3.11.11
+      - source .venv/bin/activate
+
+

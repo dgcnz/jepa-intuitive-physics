@@ -3,6 +3,7 @@ from pathlib import Path
 
 PROPERTIES = ["O1", "O2", "O3"]
 
+
 def get_videos_intphys(
     root: str,
     property: str,  # O1
@@ -15,6 +16,7 @@ def get_videos_intphys(
     :param property: Property to evaluate (e.g., "O1", "O2", "O3")
     :param meta_path: Path to precomputed metadata CSV with scene pairings
     """
+    assert property in PROPERTIES, f"Unknown property '{property}'. Exp. {PROPERTIES}."
     root = Path(root)
     df = pl.read_csv(meta_path)
     df = df.filter(pl.col("property") == property)

@@ -6,23 +6,16 @@ property: ???
 
 # sampling
 frame_step: ???
-frames_per_clip: ${eval:99//${data.frame_step}} 
 
-dataloader:
-  _target_: torch.utils.data.DataLoader
-  dataset:
-    _target_: ???
-    frame_step: ${data.frame_step}
-    frames_per_clip: ${data.frames_per_clip}
-    transform:
-      _target_: src.utils.transforms.VideoTransform
-      crop_size: 224
-      random_horizontal_flip: false
-      random_resize_aspect_ratio: [1.0, 1.0]
-      random_resize_scale: [1.0, 1.0]
-      reprob: 0.0
-      auto_augment: false
-      motion_shift: false
-  drop_last: false
-  num_workers: 8
-  pin_memory: true
+transform:
+  _target_: src.utils.transforms.VideoTransform
+  crop_size: 224
+  random_horizontal_flip: false
+  random_resize_aspect_ratio: [1.0, 1.0]
+  random_resize_scale: [1.0, 1.0]
+  reprob: 0.0
+  auto_augment: false
+  motion_shift: false
+
+pin_memory: true
+num_workers: 8

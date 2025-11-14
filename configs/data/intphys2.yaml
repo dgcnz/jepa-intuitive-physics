@@ -1,0 +1,21 @@
+# @package data
+defaults:
+  - /data/_base
+  - _self_
+
+name: intphys2
+
+root: ???
+property: ???
+split: Main
+
+# sampling
+frame_step: 10
+
+batch_size: 16
+data_fn:
+  _target_: intphyseval.data.intphys2_dataset.get_videos_intphys2
+  root: ${data.root}
+  split: ${data.split}
+  condition: ${data.property}
+  _partial_: True

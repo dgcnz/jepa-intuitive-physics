@@ -2,6 +2,7 @@ import torch
 import torch.nn.functional as F
 from src.masks.utils import apply_masks
 import logging
+from itertools import product
 
 logger = logging.getLogger(__name__)
 logging.basicConfig()
@@ -82,29 +83,43 @@ class JEPA(torch.nn.Module):
             sd = {k.replace("module.", ""): v for k, v in sd.items()}
             # for MultiMask checkpoints
             sd = {k.replace("backbone.", ""): v for k, v in sd.items()}
-            # JEPA's pos_embed is mismatched if num_frames != 16, 
-            # but for non-ROPE variants it's fixed sin-cos,
-            # so we can just skip loading it
-            # we'll just replace them with the model's own pos_embed
-            if 'pos_embed' in sd:
-                sd['pos_embed'] = self.encoder.pos_embed
-            if 'predictor_pos_embed' in sd:
-                sd['predictor_pos_embed'] = self.predictor.predictor_pos_embed
+            return sd
+
+        # JEPA's pos_embed is mismatched if num_frames != 16,
+        # but for non-ROPE variants it's fixed sin-cos,
+        # so we can just skip loading it
+        # we'll just replace them with the model's own pos_embed
+        def preprocess(sd: dict, module: str):
+            assert module in ("encoder", "predictor")
+            sd = cleanup(sd)
+            pfx = "" if module == "encoder" else "predictor_"
+            mod = self.encoder if module == "encoder" else self.predictor
+            mod = mod.__getattr__
+            if f"{pfx}pos_embed" in sd:  # sin-cos
+                sd[f"{pfx}pos_embed"] = mod(f"{pfx}pos_embed")
+            else:  # rope
+                # v-jepa checkpoints don't use RotaryEmbedding, so we must skip
+                # the freqs `blocks.0.attn.h_rotary_emb.freqs`
+                for b, d in product(range(len(mod(f"{pfx}blocks"))), ["d", "h", "w"]):
+                    key = f"{pfx}blocks.{b}.attn.{d}_rotary_emb.freqs"
+                    if key not in sd:
+                        sd[key] = mod(f"{pfx}blocks")[b].attn.h_rotary_emb.freqs
+
             return sd
 
         logger.info(f"Loading JEPA checkpoint from {ckpt}")
         checkpoint = torch.load(ckpt, map_location="cpu", weights_only=False)
 
         # Encoder
-        enc_state = cleanup(checkpoint[enc_checkpoint_key])
+        enc_state = preprocess(checkpoint[enc_checkpoint_key], "encoder")
         self.encoder.load_state_dict(enc_state, strict=True)
 
         # Target encoder
-        tgt_state = cleanup(checkpoint[target_enc_checkpoint_key])
+        tgt_state = preprocess(checkpoint[target_enc_checkpoint_key], "encoder")
         self.target_encoder.load_state_dict(tgt_state, strict=True)
 
         # Predictor
-        pred_state = cleanup(checkpoint[pred_checkpoint_key])
+        pred_state = preprocess(checkpoint[pred_checkpoint_key], "predictor")
         self.predictor.load_state_dict(pred_state, strict=True)
 
         del checkpoint

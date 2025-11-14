@@ -1,0 +1,14 @@
+# @package model
+defaults:
+  - /model/jepa/_base
+
+net:
+  num_frames: 16
+  img_size: 256
+  encoder:
+    embed_dim: 1280
+    depth: 32
+    use_rope: true
+  predictor:
+    num_mask_tokens: 10
+    use_rope: true

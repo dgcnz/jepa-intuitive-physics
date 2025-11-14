@@ -161,7 +161,7 @@ def run_eval(cfg):
 
     # data
     dataset_kwargs, video_metadata = instantiate(cfg.data.data_fn)()
-    transform = instantiate(cfg.data.dataloader.dataset.transform)
+    transform = instantiate(cfg.data.transform)
     dataset = SlidingWindowVideoDataset(
         **dataset_kwargs,
         num_frames=cfg.model.net.num_frames,
@@ -188,8 +188,8 @@ def run_eval(cfg):
         Subset(dataset, shuffled_indices.tolist()),
         batch_size=cfg.data.batch_size,
         shuffle=False,
-        num_workers=cfg.data.dataloader.num_workers,
-        pin_memory=cfg.data.dataloader.pin_memory,
+        num_workers=cfg.data.num_workers,
+        pin_memory=cfg.data.pin_memory,
     )
 
     loader = fabric.setup_dataloaders(loader)
@@ -236,6 +236,7 @@ def run_eval(cfg):
     # split into per-video losses
     losses = torch.split(losses, dataset._num_samples)
     # sort back into (match, label) order
+    video_metadata = [video_metadata[i] for i in canon_order.tolist()]
     losses = [losses[i] for i in canon_order.tolist()]
 
     log.info("Computing metrics")
@@ -248,6 +249,7 @@ def run_eval(cfg):
             "losses": losses,
             "labels": labels,
             "matches": matches,
+            "metadata": video_metadata,
         },
         output_dir / "losses.pth",
     )

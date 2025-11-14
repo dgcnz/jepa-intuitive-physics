@@ -79,9 +79,7 @@ class SlidingWindowVideoDataset(Dataset):
         return self._apply_transform(sample)
 
     def _apply_transform(self, frames: Tensor) -> Tensor:
-        if self.transform:
-            frames = self.transform(frames)
-        return frames
+        return self.transform(frames) if self.transform else frames
 
     def _get_video_length(self, video_path: str | list[str]) -> int:
         """Get video length."""
