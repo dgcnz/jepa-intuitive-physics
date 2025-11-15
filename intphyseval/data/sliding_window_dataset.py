@@ -5,6 +5,9 @@ from torch.utils.data import Dataset
 from PIL import Image
 from decord import VideoReader, cpu
 from torch import Tensor
+from jaxtyping import Float
+from intphyseval.utils import get_time_masks
+from collections import defaultdict
 
 
 class SlidingWindowVideoDataset(Dataset):
@@ -20,7 +23,7 @@ class SlidingWindowVideoDataset(Dataset):
         self,
         videos: list[str | list[str]],
         num_frames: int = 16,
-        stride: int = 4,
+        stride: int = 2,
         frame_step: int = 2,
         start_frames: Optional[list[int]] = None,
         end_frames: Optional[list[int]] = None,
@@ -29,8 +32,8 @@ class SlidingWindowVideoDataset(Dataset):
     ):
         """
         :param videos: List of video paths (either .mp4 paths or lists of .png paths)
-        :param num_frames: Number of frames per window (e.g., 16)
-        :param stride: Stride between windows (e.g., 4)
+        :param num_frames: Number of frames per window
+        :param stride: Stride between windows, usually equal to `tubelet_size`
         :param frame_step: Frame sampling rate within video (e.g., 2 = every 2nd frame)
         :param start_frames: Per-video start frame in raw space (default: 0 for all)
         :param end_frames: Per-video end frame in raw space (default: video length for all)
@@ -60,22 +63,24 @@ class SlidingWindowVideoDataset(Dataset):
         ]
         # number of samples per clip
         # assert all clip_length >= num_frames
-        assert all(l >= num_frames for l in self.clip_lengths), (
-            "clip_length < num_frames"
-        )
+        assert all(l >= num_frames for l in self.clip_lengths), "clip_len < num_frames"
         self._num_samples = [(l - num_frames) // stride + 1 for l in self.clip_lengths]  # noqa: E741
-        self.flat_index: list[tuple[int, int]] = [
-            (video_idx, sample_idx)
+        self._flat_index: list[tuple[int, int]] = [
+            (video_idx, start_frame_offset)
             for video_idx, num_samples in enumerate(self._num_samples)
-            for sample_idx in range(num_samples)
+            for start_frame_offset in range(0, num_samples * stride, stride)
         ]
 
     def __len__(self):
-        return len(self.flat_index)
+        return len(self._flat_index)
+
+    @property
+    def num_samples(self) -> list[int]:
+        return self._num_samples
 
     def __getitem__(self, flat_idx: int) -> Tensor:
-        video_idx, sample_idx = self.flat_index[flat_idx]
-        sample = self._load_sample(video_idx, sample_idx)
+        video_idx, start_offset = self._flat_index[flat_idx]
+        sample = self._load_frames(video_idx, start_offset, self.num_frames)
         return self._apply_transform(sample)
 
     def _apply_transform(self, frames: Tensor) -> Tensor:
@@ -87,16 +92,6 @@ class SlidingWindowVideoDataset(Dataset):
             return len(VideoReader(video_path, num_threads=-1, ctx=cpu(0)))
         else:  # list of .pngs
             return len(video_path)
-
-    def _load_sample(self, video_idx: int, sample_idx: int) -> Tensor:
-        """
-        Load a single window from video.
-
-        :param video_idx: Index of video in the list
-        :param sample_idx: Sample index within the clip
-        :return: Tensor of shape [T, H, W, C]
-        """
-        return self._load_frames(video_idx, sample_idx * self.stride, self.num_frames)
 
     def _load_clip(self, video_idx: int, with_tx: bool = False) -> Tensor:
         """
@@ -110,7 +105,7 @@ class SlidingWindowVideoDataset(Dataset):
 
     def _load_frames(
         self, video_idx: int, start_frame_offset: int, num_frames: int
-    ) -> Tensor:
+    ) -> Float[Tensor, "T H W C"]:
         """
         Load a single window from video.
 
@@ -136,3 +131,134 @@ class SlidingWindowVideoDataset(Dataset):
             frames = [Image.open(path) for path in frame_paths]
             frames = [torch.from_numpy(np.array(f)) for f in frames]
             return torch.stack(frames)
+
+
+class SlidingWindowVideoPredictionDataset(SlidingWindowVideoDataset):
+    def __init__(
+        self,
+        *,
+        img_size: int,
+        patch_size: int,
+        tubelet_size: int,
+        context_length: int,
+        mask_as_bool: bool,
+        first_sample_mode: str = "none",
+        **kwargs,
+    ):
+        """
+        :param first_sample_mode: How to handle the first sample in each video.
+            - "none": the first prediction window is at context_length.
+            - "var_ctx_var_pred": the first prediction window is at tubelet_size,
+                we shrink context size to fit it and
+                we grow the prediction size accordingly to match num_frames.
+            - "var_ctx_fixed_pred": the first prediction window is at tubelet_size,
+                we shrink context size to fit it and
+                we keep the prediction size fixed.
+        """
+        super().__init__(**kwargs)
+        self.context_length = context_length
+        self.mask_as_bool = mask_as_bool
+        self.first_sample_mode = first_sample_mode
+        # currently only support var_ctx_var_pred and none because both keep num_frames fixed.
+        # variable num_frames would require padding or something. too lazy to support it rn.
+        # NOTE: intphys2 supports the three modes but only uses var_ctx_var_pred.
+        # In intphys2 terms:
+        #   var_ctx_var_pred  = (max_context_mode == True) and (num_frames_to_pred == -1)
+        #   none              = max_context_mode == False
+        assert first_sample_mode in ["none", "var_ctx_var_pred"]
+        assert context_length < self.num_frames
+
+        # BUILD FLAT INDEX
+        # (video_idx, start_offset, context_length, prediction_frame)
+        self._flat_pred_index: list[tuple[int, int, int, int]] = []
+        self._pred_num_samples: list[int] = []
+        for vid_idx, clip_len in enumerate(self.clip_lengths):
+            pfs, ctxs = [], []
+            # we contract context to fit first prediction frames
+            if first_sample_mode == "var_ctx_var_pred":
+                pfs.extend(range(tubelet_size, context_length, tubelet_size))
+                ctxs.extend(range(tubelet_size, context_length, tubelet_size))
+
+            # normal full-context predictions
+            last_pf = clip_len - (self.num_frames - context_length)
+            full_pfs = list(range(context_length, last_pf + 1, self.stride))
+            assert len(full_pfs) == self._num_samples[vid_idx]  # check consistency
+            pfs.extend(full_pfs)
+            ctxs.extend([context_length] * len(full_pfs))
+
+            # update flat index and num samples
+            self._flat_pred_index.extend(
+                (vid_idx, pf - ctx, ctx, pf) for pf, ctx in zip(pfs, ctxs)
+            )
+            self._pred_num_samples.append(len(pfs))
+
+        # PRECOMPUTE MASKS
+        mask_kwargs = dict(
+            spatial_size=(patch_size, patch_size),
+            temporal_size=tubelet_size,
+            spatial_dim=(img_size, img_size),
+            temporal_dim=self.num_frames,
+            as_bool=mask_as_bool,
+        )
+        self.masks = dict()
+        if first_sample_mode == "var_ctx_var_pred":
+            for ctxt in range(tubelet_size, context_length, tubelet_size):
+                self.masks[ctxt] = get_time_masks(ctxt, **mask_kwargs)
+        self.masks[context_length] = get_time_masks(context_length, **mask_kwargs)
+
+    def __len__(self):
+        return len(self._flat_pred_index)
+
+    def groupby_context_length(self) -> dict[int, list[int]]:
+        # important: keeps original order within each group
+        groups = defaultdict(list)
+        for idx, (_, _, ctx_len, _) in enumerate(self._flat_pred_index):
+            groups[ctx_len].append(idx)
+        return dict(groups)
+
+    @property
+    def num_samples(self) -> list[int]:
+        return self._pred_num_samples
+
+    def __getitem__(self, idx: int):
+        video_idx, start_offset, context_length, _ = self._flat_pred_index[idx]
+        sample = self._load_frames(video_idx, start_offset, self.num_frames)
+        sample = self._apply_transform(sample)
+        mask_enc, mask_pred, full_mask = self.masks[context_length]
+        return sample, mask_enc, mask_pred, full_mask
+
+
+if __name__ == "__main__":
+    from intphyseval.data.intphys_dataset_v2 import get_videos_intphys
+
+    vids = get_videos_intphys(
+        root="/mnt/sdb1/datasets/intphys/dev",
+        property="O1",
+        meta_path="intphyseval/data/metadata/intphys/dev/meta.csv",
+    )[0]["videos"]
+    ds = SlidingWindowVideoPredictionDataset(
+        videos=vids,
+        img_size=224,
+        tubelet_size=2,
+        num_frames=16,
+        stride=2,
+        frame_step=2,
+        context_length=6,
+        patch_size=16,
+        mask_as_bool=False,
+        first_sample_mode="var_ctx_var_pred",
+    )
+    print(ds[0][1].shape)
+    print(ds[0][2].shape)
+    print(ds[0][3].shape)
+    print(ds[1][1].shape)
+    print(ds[1][2].shape)
+    print(ds[1][3].shape)
+    dl = torch.utils.data.DataLoader(ds, batch_size=8, shuffle=True)
+    batch = next(iter(dl))
+    # this will throw an error on mask_as_bool=True and first_sample_mode!='none'
+    # the solution is to subgroup by context length = one dataloader per group
+    print(batch[0].shape)
+    print(batch[1].shape)
+    print(batch[2].shape)
+    print(batch[3].shape)

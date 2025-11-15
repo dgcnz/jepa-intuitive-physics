@@ -5,6 +5,7 @@ import numpy as np
 import torch
 import torch.nn.functional as F
 from torch.utils.data import DataLoader, Subset
+import random
 from tqdm import tqdm
 from sklearn.metrics import precision_recall_curve, roc_curve, auc
 
@@ -17,7 +18,7 @@ from jaxtyping import Float
 from torch import Tensor
 from torch.nn.utils.rnn import pad_sequence
 
-from intphyseval.data.sliding_window_dataset import SlidingWindowVideoDataset
+from intphyseval.data.sliding_window_dataset import SlidingWindowVideoPredictionDataset
 from intphyseval.utils import get_time_masks
 
 rootutils.setup_root(__file__, indicator=".project-root", pythonpath=True)
@@ -52,45 +53,16 @@ def cross_entropy_sk(
 
 @torch.no_grad()
 def compute_losses(
-    fabric: L.Fabric,
     net: torch.nn.Module,
     loader: DataLoader,
-    context_length: int,
-    patch_size: int,
-    model_num_frames: int,
-    mask_as_bool: bool,
     surprise_fn,
 ) -> Tensor:
-    # precompute masks
-    m, m_, full_m = fabric.to_device(
-        get_time_masks(
-            context_length,
-            spatial_size=(patch_size, patch_size),
-            temporal_dim=model_num_frames,
-            as_bool=mask_as_bool,
-        )
-    )
-    masks_enc = m.unsqueeze(0)
-    masks_pred = m_.unsqueeze(0)
-    full_mask = full_m.unsqueeze(0)
-
     all_losses = []
-    for samples in tqdm(loader, mininterval=10):
+    for samples, masks_enc, masks_pred, full_mask in tqdm(loader, mininterval=10):
         # samples: [B, C, T, H, W]
-        B = samples.shape[0]
-
-        masks_enc_batch = masks_enc.expand(B, -1)
-        masks_pred_batch = masks_pred.expand(B, -1)
-        full_mask_batch = full_mask.expand(B, -1)
-
-        preds, targets = net(
-            samples, masks_enc_batch, masks_pred_batch, full_mask_batch
-        )
-
+        preds, targets = net(samples, masks_enc, masks_pred, full_mask)
         loss = surprise_fn(preds, targets).detach()  # [B, ...]
-
         all_losses.append(loss.cpu())
-
     return torch.cat(all_losses, dim=0)
 
 
@@ -157,18 +129,26 @@ def run_eval(cfg):
     # or account for mod % num_gpu from DistributedSampler's native sampling
     assert fabric.world_size == 1, "Only single GPU is supported"
     assert not (cfg.compute_metrics and "dense" in cfg.surprise)
+    assert cfg.data.transform.crop_size == cfg.model.net.img_size
     log.info(f"{cfg.data.name}:{cfg.data.property}")
 
     # data
     dataset_kwargs, video_metadata = instantiate(cfg.data.data_fn)()
     transform = instantiate(cfg.data.transform)
-    dataset = SlidingWindowVideoDataset(
+    dataset = SlidingWindowVideoPredictionDataset(
         **dataset_kwargs,
         num_frames=cfg.model.net.num_frames,
         stride=cfg.stride,
         frame_step=cfg.data.frame_step,
         transform=transform,
         validate_end=True,
+        # pred args
+        img_size=cfg.data.transform.crop_size,
+        patch_size=cfg.model.net.patch_size,
+        tubelet_size=cfg.model.net.tubelet_size,
+        context_length=cfg.context_length,
+        mask_as_bool=cfg.mask_as_bool,
+        first_sample_mode=cfg.data.first_sample_mode,
     )
 
     # validate data order, we need to ensure that data is match-ordered
@@ -180,26 +160,9 @@ def run_eval(cfg):
     assert torch.all(matches[::2] == matches[1::2])
     assert torch.all(labels[::2] == 0) and torch.all(labels[1::2] == 1)
 
-    # pre-shuffle indices for IID batching
-    n_total_samples = len(dataset)  # total number of windows across all videos
-    shuffled_indices = torch.randperm(n_total_samples)
-
-    loader = DataLoader(
-        Subset(dataset, shuffled_indices.tolist()),
-        batch_size=cfg.data.batch_size,
-        shuffle=False,
-        num_workers=cfg.data.num_workers,
-        pin_memory=cfg.data.pin_memory,
-    )
-
-    loader = fabric.setup_dataloaders(loader)
-
     # Initialize model
     with fabric.init_module(empty_init=True):
         net = instantiate(cfg.model.net)
-
-    if cfg.get("compile", False):
-        net = torch.compile(net, fullgraph=True, dynamic=False)
 
     net = fabric.setup(net)
 
@@ -217,24 +180,53 @@ def run_eval(cfg):
     }
     surprise = surprises[cfg.surprise]
 
-    losses = compute_losses(
-        fabric=fabric,
-        net=net,
-        loader=loader,
-        context_length=cfg.context_length,
-        patch_size=net.patch_size,
-        model_num_frames=net.num_frames,
-        mask_as_bool=cfg.mask_as_bool,
-        surprise_fn=surprise,
-    )
+    # little caveat: for mask_as_bool=False and start_frame_mode!='none',
+    # we can't batch masks, so we'll have to do that separately.
+    # the strategy is to first gather all "variable-length" masks (we can group by context_length)
+    # create a loader for that
+    # then for the remaining masks, we can batch them normally
 
-    # unshuffle losses
-    # losses = [losses[shuffled_indices[v]] for v in shuffled_indices]
-    inv_indices = torch.empty_like(shuffled_indices)
-    inv_indices[shuffled_indices] = torch.arange(len(shuffled_indices))
-    losses = losses[inv_indices]
+    log.info("Dataset stats:")
+    log.info(f"\tTotal videos: {len(dataset._num_samples)}")
+    log.info(f"\tMedian #samples per video: {np.median(dataset._num_samples)}")
+    groups = dataset.groupby_context_length()
+    log.info("Group stats:")
+    for ctx_len, indices in groups.items():
+        log.info(f"\tContext length {ctx_len}: {len(indices)} samples")
+
+    if dataset.mask_as_bool or cfg.data.first_sample_mode == "none":
+        log.info("Disabling per-ctxsize batching. Batching all samples together.")
+        groups = {dataset.context_length: list(range(len(dataset)))}
+
+    all_losses, all_indices = [], []
+    for gix, (_, indices) in enumerate(groups.items()):  # groups are already sorted by context length
+        log.info(f"Processing group {gix} with {len(indices)} samples")
+        # pre-shuffle indices for IID batching
+        perm = torch.randperm(len(indices))
+        shuffled_indices = [indices[i] for i in perm.tolist()]
+        loader = DataLoader(
+            Subset(dataset, shuffled_indices),
+            batch_size=cfg.data.batch_size,
+            shuffle=False,
+            num_workers=cfg.data.num_workers,
+            pin_memory=cfg.data.pin_memory,
+        )
+        loader = fabric.setup_dataloaders(loader)
+        per_group_losses = compute_losses(net=net, loader=loader, surprise_fn=surprise)
+
+        # unshuffle losses
+        inv_indices = torch.argsort(perm)
+        per_group_losses = per_group_losses[inv_indices]
+        all_losses.append(per_group_losses)
+        all_indices.append(torch.tensor(indices, dtype=torch.long))
+
+    # concatenate and reorder all losses
+    all_losses = torch.cat(all_losses, dim=0)
+    all_indices = torch.cat(all_indices, dim=0)
+    losses = torch.empty_like(all_losses)
+    losses[all_indices] = all_losses
     # split into per-video losses
-    losses = torch.split(losses, dataset._num_samples)
+    losses = torch.split(losses, dataset.num_samples)
     # sort back into (match, label) order
     video_metadata = [video_metadata[i] for i in canon_order.tolist()]
     losses = [losses[i] for i in canon_order.tolist()]

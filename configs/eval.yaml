@@ -7,7 +7,7 @@ defaults:
 
 stride: 2
 context_length: 6
-surprise: 'l1'
+surprise: l1
 seed: 0
 tags: null
 mask_as_bool: false
@@ -16,6 +16,7 @@ compute_metrics: true
 data:
   root: /mnt/sdb1/datasets/intphys/dev
   property: O1
+  first_sample_mode: none
 
 model:
   ckpt_kwargs: 
@@ -28,9 +29,6 @@ paths:
   work_dir: ${hydra:runtime.cwd}
 
 float32_matmul_precision: high
-allow_tf32: true
-cudnn_benchmark: false
-compile: false
 
 # Eval controls
 trainer:

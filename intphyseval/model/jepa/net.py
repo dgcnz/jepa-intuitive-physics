@@ -18,6 +18,7 @@ class JEPA(torch.nn.Module):
         num_frames: int,
         img_size: int,
         patch_size: int,
+        tubelet_size: int,
         normalize_targets=True,
         normalize_enc=False,
     ):
@@ -25,6 +26,7 @@ class JEPA(torch.nn.Module):
         self.num_frames = num_frames
         self.img_size = img_size
         self.patch_size = patch_size
+        self.tubelet_size = tubelet_size
 
         self.encoder = encoder
         self.predictor = predictor

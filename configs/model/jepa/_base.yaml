@@ -5,6 +5,7 @@ net:
   num_frames: 16
   img_size: 224
   patch_size: 16
+  tubelet_size: 2
 
   normalize_enc: false
   normalize_targets: true
@@ -27,7 +28,7 @@ net:
     num_frames: ${model.net.num_frames}
     # from the model constructor
     
-    tubelet_size: 2
+    tubelet_size: ${model.net.tubelet_size}
     uniform_power: true
     use_sdpa: true
     is_causal: false

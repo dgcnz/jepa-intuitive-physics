@@ -127,6 +127,7 @@ class SIGMA(torch.nn.Module):
         num_frames: int,
         img_size: int,
         patch_size: int,
+        tubelet_size: int,
         target_type: str, # dino_v1 or mlp
         loss_func: str = "SWAV",
     ):
@@ -134,6 +135,7 @@ class SIGMA(torch.nn.Module):
         self.num_frames = num_frames
         self.img_size = img_size
         self.patch_size = patch_size
+        self.tubelet_size = tubelet_size
 
         self.encoder = encoder
         self.target_encoder = target_encoder
