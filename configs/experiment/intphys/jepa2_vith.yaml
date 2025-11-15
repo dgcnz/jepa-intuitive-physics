@@ -8,13 +8,15 @@ defaults:
 tags: ["intphys", "jepa2", "vith"]
 
 mask_as_bool: false
-surprise: 'l1'
+surprise: l1
 data:
   root: /home/diego.canez/datasets/intphys/dev
 
 model:
+  net:
+    num_frames: 16
   ckpt_kwargs: 
-    ckpt: /home/diego.canez/checkpoints/intphys/jepa2/vith16.pth.tar
+    ckpt: /home/diego.canez/checkpoints/intphys/jepa2/vith.pt
 
 trainer:
   loggers:
