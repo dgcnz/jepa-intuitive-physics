@@ -5,7 +5,6 @@ import numpy as np
 import torch
 import torch.nn.functional as F
 from torch.utils.data import DataLoader, Subset
-import random
 from tqdm import tqdm
 from sklearn.metrics import precision_recall_curve, roc_curve, auc
 
@@ -19,7 +18,6 @@ from torch import Tensor
 from torch.nn.utils.rnn import pad_sequence
 
 from intphyseval.data.sliding_window_dataset import SlidingWindowVideoPredictionDataset
-from intphyseval.utils import get_time_masks
 
 rootutils.setup_root(__file__, indicator=".project-root", pythonpath=True)
 OmegaConf.register_new_resolver("eval", eval)
