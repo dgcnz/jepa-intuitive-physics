@@ -11,10 +11,15 @@ mask_as_bool: false
 surprise: l1
 data:
   root: /home/diego.canez/datasets/intphys/dev
+  batch_size: 64
+  first_sample_mode: var_ctx_var_pred
+  transform: 
+    crop_size: ${model.net.img_size} 
 
 model:
   net:
     num_frames: 16
+    img_size: 256 
   ckpt_kwargs: 
     ckpt: /home/diego.canez/checkpoints/intphys/jepa2/vith.pt
 

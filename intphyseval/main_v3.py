@@ -167,6 +167,7 @@ def run_eval(cfg):
     if cfg.model.pretrained:
         net.load_ckpt(**cfg.model.ckpt_kwargs)
     net.freeze()
+    net = net.eval()
 
     log.info("Running eval")
 
