@@ -1,0 +1,49 @@
+# @package _global_
+defaults:
+  - override /model: jepa2/vith
+  - override /data: intphys
+  - override /hydra/launcher: slurm
+  - _self_
+
+tags: ["intphys", "jepa2", "vith"]
+
+mask_as_bool: false
+surprise: l1
+data:
+  root: /home/diego.canez/datasets/intphys/dev
+  batch_size: 128
+  transform: 
+    crop_size: ${model.net.img_size} 
+
+model:
+  net:
+    num_frames: 48
+    img_size: 256 # as it should
+  ckpt_kwargs: 
+    ckpt: /home/diego.canez/checkpoints/intphys/jepa2/vith.pt
+
+trainer:
+  loggers:
+    project: ipe-intphys
+    offline: true
+    group: jepa2_vith_48
+
+hydra:
+  mode: MULTIRUN
+  sweeper:
+    params:
+      stride: 2
+      context_length: 12,18,24,30,36,42
+      data.property: O1,O2,O3
+  launcher:
+    timeout_min: 60
+    nodes: 1
+    tasks_per_node: 1
+    cpus_per_task: 10
+    gres: gpu:rtxa6000:1
+    partition: data-science,gpu
+    account: investigacion1
+    setup:
+      - module load python3/3.11.11
+      - source .venv/bin/activate
+

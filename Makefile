@@ -3,7 +3,7 @@ TARGET = khipu
 .PHONY: sync stderr stdout check-commit
 
 sync:
-	fab run --target=$(TARGET) --cmd "git pull && uv sync"
+	uv run fab run --target=$(TARGET) --cmd "git pull && uv sync"
 
 check-commit:
 	@local_commit=$$(git rev-parse HEAD); \
