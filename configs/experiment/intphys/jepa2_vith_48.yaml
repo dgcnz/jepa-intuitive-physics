@@ -11,7 +11,8 @@ mask_as_bool: false
 surprise: l1
 data:
   root: /home/diego.canez/datasets/intphys/dev
-  batch_size: 128
+  batch_size: 64
+  first_sample_mode: var_ctx_var_pred
   transform: 
     crop_size: ${model.net.img_size} 
 
