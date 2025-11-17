@@ -32,7 +32,7 @@ float32_matmul_precision: high
 
 # Eval controls
 trainer:
-  precision: b16-mixed
+  precision: bf16-mixed
   accelerator: auto
   strategy: auto
   loggers:
