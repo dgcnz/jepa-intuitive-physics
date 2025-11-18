@@ -1,6 +1,6 @@
 # @package _global_
 defaults:
-  - override /model: sigma/dino_vitb
+  - override /model: sigma/vitb_dino
   - override /data: intphys2
   - override /hydra/launcher: slurm
   - _self_
