@@ -1,0 +1,54 @@
+# @package _global_
+defaults:
+  - override /model: sigma/dino_vitb
+  - override /data: intphys2
+  - override /hydra/launcher: slurm
+  - _self_
+
+tags: ["intphys2", "sigma_dino", "vitb"]
+
+mask_as_bool: true
+surprise: cross_entropy_sk
+data:
+  root: /home/diego.canez/datasets/intphys2
+  batch_size: 32
+  first_sample_mode: none
+  split: Main
+  transform:
+    crop_size: ${model.net.img_size}  
+
+model:
+  net:
+    num_frames: 16
+    img_size: 224
+  ckpt_kwargs:
+    ckpt: /home/diego.canez/checkpoints/intphys/sigma/ssv2_vit_b_sigma_with_dino.pth
+
+
+
+trainer:
+  loggers:
+    project: ipe-intphys2
+    offline: true
+    group: sigma_dino_vitb
+
+hydra:
+  mode: MULTIRUN
+  sweeper:
+    params:
+      stride: 2
+      context_length: 2,4,6,8,10
+      data.property: continuity,immutability,permanence,solidity
+  launcher:
+    timeout_min: 720
+    nodes: 1
+    tasks_per_node: 1
+    cpus_per_task: 10
+    gres: gpu:rtxa6000:1
+    partition: data-science,gpu
+    account: investigacion1
+    setup:
+      - module load python3/3.11.11
+      - source .venv/bin/activate
+
+
