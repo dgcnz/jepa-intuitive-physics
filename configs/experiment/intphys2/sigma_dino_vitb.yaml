@@ -37,7 +37,7 @@ hydra:
   sweeper:
     params:
       stride: 2
-      context_length: 2,4,6,8,10
+      context_length: 2,4,6,8,10,12,14
       data.property: continuity,immutability,permanence,solidity
   launcher:
     timeout_min: 720
