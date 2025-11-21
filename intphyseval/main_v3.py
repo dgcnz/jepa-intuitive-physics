@@ -193,8 +193,8 @@ def run_eval(cfg):
     for ctx_len, indices in groups.items():
         log.info(f"\tContext length {ctx_len}: {len(indices)} samples")
 
-    if dataset.mask_as_bool or cfg.data.first_sample_mode == "none":
-        log.info("Disabling per-ctxsize batching. Batching all samples together.")
+    if cfg.data.first_sample_mode == "none":
+        log.info("Batching all samples/context sizes together. first_sample_mode=none.")
         groups = {dataset.context_length: list(range(len(dataset)))}
 
     all_losses, all_indices = [], []
