@@ -30,7 +30,7 @@ trainer:
   loggers:
     project: ipe-intphys2
     offline: true
-    group: jepa2_vith_16
+    group: jepa2_vith_16_varctx
 
 hydra:
   mode: MULTIRUN
