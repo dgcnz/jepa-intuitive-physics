@@ -1,5 +1,6 @@
 import logging
 from pathlib import Path
+from functools import partial
 import wandb
 import numpy as np
 import torch
@@ -35,6 +36,64 @@ def l1_features(
 
 def l1_features_dense(preds, targets):
     return F.l1_loss(preds, targets, reduction="none").mean((-1))
+
+
+
+def _l1_pca(
+    preds: Float[Tensor, "B N D"],
+    targets: Float[Tensor, "B N D"],
+    *,
+    pcs: tuple[int, ...],
+) -> Float[Tensor, "B N"]:  # noqa: F821
+    """
+    L1 surprise after projecting features onto selected principal components.
+
+    PCA is fitted per-sample on the target features for that sample.
+
+    :param preds: Predicted token features of shape [B, N, D]
+    :param targets: Target token features of shape [B, N, D]
+    :param pcs: Tuple of 0-based principal component indices to use
+    :return: Per-token L1 distances aggregated over selected PCs (mean over PCs), shape [B, N]
+    """
+    assert preds.shape == targets.shape
+    assert len(pcs) > 0
+    preds = preds.contiguous()
+    targets = targets.contiguous()
+
+    B, N, D = preds.shape
+    q = max(pcs) + 1
+    assert 1 <= q <= min(N, D), f"Invalid pcs={pcs} for shapes B={B}, N={N}, D={D}"
+
+    mean = targets.mean(dim=1, keepdim=True)
+    targets_centered = targets - mean
+    # Fit PCA per sample in batch using low-rank SVD
+    _, _, V = torch.pca_lowrank(targets_centered, q=q, center=False)
+    # V: [B, D, q], principal directions per sample
+    preds_centered = preds - mean
+    proj_pred = torch.matmul(preds_centered, V)  # [B, N, q]
+    proj_tgt = torch.matmul(targets_centered, V)  # [B, N, q]
+
+    idx = torch.as_tensor(pcs, device=proj_pred.device, dtype=torch.long)
+    diff = torch.abs(proj_pred[..., idx] - proj_tgt[..., idx])  # [B, N, len(pcs)]
+    return diff
+
+def l1_pca_dense(
+    preds: Float[Tensor, "B N D"],
+    targets: Float[Tensor, "B N D"],
+    *,
+    pcs: tuple[int, ...],
+) -> Float[Tensor, "B"]:  # noqa: F821
+    diff = _l1_pca(preds, targets, pcs=pcs)  # [B, N, len(pcs)]
+    return diff.mean(dim=-1)
+
+def l1_pca(
+    preds: Float[Tensor, "B N D"],
+    targets: Float[Tensor, "B N D"],
+    *,
+    pcs: tuple[int, ...],
+) -> Float[Tensor, "B"]:  # noqa: F821
+    diff = _l1_pca(preds, targets, pcs=pcs)  # [B, N, len(pcs)]
+    return diff.mean(dim=(-1, -2))
 
 
 def cross_entropy_sk_dense(
@@ -174,8 +233,15 @@ def run_eval(cfg):
     surprises = {
         "l1": l1_features,
         "l1_dense": l1_features_dense,
+        "l1_pca_pc1_dense": partial(l1_pca_dense, pcs=(0,)),
+        "l1_pca_pc2_dense": partial(l1_pca_dense, pcs=(1,)),
+        "l1_pca_pc3_dense": partial(l1_pca_dense, pcs=(2,)),
+        "l1_pca_pc4_dense": partial(l1_pca_dense, pcs=(3,)),
+        "l1_pca_pc5_dense": partial(l1_pca_dense, pcs=(4,)),
+        "l1_pca_pc6_dense": partial(l1_pca_dense, pcs=(5,)),
         "cross_entropy_sk": cross_entropy_sk,
         "cross_entropy_sk_dense": cross_entropy_sk_dense,
+        "l1_pca_pc4": partial(l1_pca, pcs=(3,)),
     }
     surprise = surprises[cfg.surprise]
 
