@@ -86,10 +86,11 @@ class DinoWorld(nn.Module):
         logger.info(f"Loading DinoWorld checkpoint from {ckpt}")
 
         for n in ("src", "src.utils", "src.utils.scheduler"):
-            sys.modules.setdefault(n, types.ModuleType(n))
-            sys.modules["src.utils.scheduler"].CAPIScheduler = type(
-                "CAPIScheduler", (), {}
-            )
+            m = sys.modules.setdefault(n, types.ModuleType(n))
+            if n in ("src", "src.utils"):
+                m.__path__ = []  # make it a package
+
+        sys.modules["src.utils.scheduler"].CAPIScheduler = type("CAPIScheduler", (), {})
 
         checkpoint = torch.load(ckpt, map_location="cpu", weights_only=False)
         state_dict = checkpoint["model"]
