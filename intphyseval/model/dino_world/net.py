@@ -83,7 +83,7 @@ class DinoWorld(nn.Module):
     def load_ckpt(self, ckpt: str):
         logger.info(f"Loading DinoWorld checkpoint from {ckpt}")
         scalar = getattr(getattr(np, "_core", np.core).multiarray, "scalar")
-        with torch.serialization.safe_globals([scalar, np.dtype]):
+        with torch.serialization.safe_globals([scalar, np.dtypes.Float64DType]):
             checkpoint = torch.load(ckpt, map_location="cpu", weights_only=True)
         state_dict = checkpoint["model"]
 
