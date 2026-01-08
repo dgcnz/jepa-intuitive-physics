@@ -10,7 +10,8 @@ tags: ["intphys", "dinoworld", "vitb", "dinov3"]
 mask_as_bool: true
 surprise: l1
 data:
-  root: /home/dgcnz/datasets/intphys/dev 
+  root: /home/diego.canez/datasets/intphys/dev
+
 
 model:
   net:
