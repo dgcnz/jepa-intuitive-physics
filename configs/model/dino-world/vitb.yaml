@@ -1,0 +1,28 @@
+# @package model
+
+net:
+  _target_: intphyseval.model.dino_world.net.DinoWorld
+  num_frames: 16
+  img_size: 224
+  patch_size: 16
+  tubelet_size: 1
+  fps: 4.0
+  normalize_targets: false
+
+  encoder:
+    _target_: intphyseval.model.dino_world.dinoworld.TimmViTEncoder
+    model_name: "vit_base_patch16_dinov3.lvd1689m"
+    pretrained: true
+    num_classes: 0
+
+  predictor:
+    _target_: intphyseval.model.dino_world.dinoworld.CrossAttentionPredictor
+    dim: 768
+    depth: 12
+    num_heads: 12
+    encoder_dim: 768
+    rope_kwargs: {}
+
+pretrained: true
+ckpt_kwargs: 
+  ckpt: ???

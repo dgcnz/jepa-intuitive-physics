@@ -1,0 +1,45 @@
+# @package _global_
+defaults:
+  - override /model: dino-world/vitb
+  - override /data: intphys
+  - override /hydra/launcher: slurm
+  - _self_
+
+tags: ["intphys", "dinoworld", "vitb", "dinov3"]
+
+mask_as_bool: true
+surprise: l1
+data:
+  root: /home/dgcnz/datasets/intphys/dev 
+
+model:
+  net:
+    num_frames: 16
+  ckpt_kwargs: 
+    ckpt: /home/diego.canez/research/precognition/outputs/2025-12-29/13-25-03/last.ckpt
+
+trainer:
+  loggers:
+    project: ipe-intphys
+    offline: true
+
+hydra:
+  mode: MULTIRUN
+  sweeper:
+    params:
+      stride: 2
+      context_length: 2,4,6,8,10
+      data.property: O1,O2,O3
+  launcher:
+    timeout_min: 60
+    nodes: 1
+    tasks_per_node: 1
+    cpus_per_task: 10
+    gres: gpu:rtxa6000:1
+    partition: data-science,gpu
+    account: investigacion1
+    setup:
+      - module load python3/3.11.11
+      - source .venv/bin/activate
+
+
