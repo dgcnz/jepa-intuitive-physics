@@ -81,7 +81,7 @@ class DinoWorld(nn.Module):
 
     def load_ckpt(self, ckpt: str):
         logger.info(f"Loading DinoWorld checkpoint from {ckpt}")
-        checkpoint = torch.load(ckpt, map_location="cpu", weights_only=False)
+        checkpoint = torch.load(ckpt, map_location="cpu", weights_only=True)
         state_dict = checkpoint["model"]
 
         def load_component(component, prefix, state_dict):
