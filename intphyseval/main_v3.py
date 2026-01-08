@@ -38,7 +38,6 @@ def l1_features_dense(preds, targets):
     return F.l1_loss(preds, targets, reduction="none").mean((-1))
 
 
-
 def _l1_pca(
     preds: Float[Tensor, "B N D"],
     targets: Float[Tensor, "B N D"],
@@ -55,7 +54,7 @@ def _l1_pca(
     :param pcs: Tuple of 0-based principal component indices to use
     :return: Per-token L1 distances aggregated over selected PCs (mean over PCs), shape [B, N]
     """
-    assert preds.shape == targets.shape
+    assert preds.shape == targets.shape, (preds.shape, targets.shape)
     assert len(pcs) > 0
     preds = preds.contiguous()
     targets = targets.contiguous()
