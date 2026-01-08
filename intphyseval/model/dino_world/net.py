@@ -85,12 +85,13 @@ class DinoWorld(nn.Module):
     def load_ckpt(self, ckpt: str):
         logger.info(f"Loading DinoWorld checkpoint from {ckpt}")
 
-        for n in ("src", "src.utils", "src.utils.scheduler"):
-            m = sys.modules.setdefault(n, types.ModuleType(n))
-            if n in ("src", "src.utils"):
-                m.__path__ = []  # make it a package
+        sys.modules.setdefault("src", types.ModuleType("src")).__path__ = []
+        sys.modules.setdefault("src.utils", types.ModuleType("src.utils")).__path__ = []
 
-        sys.modules["src.utils.scheduler"].CAPIScheduler = type("CAPIScheduler", (), {})
+        sched = sys.modules.setdefault(
+            "src.utils.scheduler", types.ModuleType("src.utils.scheduler")
+        )
+        sched.__getattr__ = lambda name, _c={}: _c.setdefault(name, type(name, (), {}))
 
         checkpoint = torch.load(ckpt, map_location="cpu", weights_only=False)
         state_dict = checkpoint["model"]
