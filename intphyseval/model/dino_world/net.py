@@ -1,6 +1,8 @@
 import torch
 import torch.nn as nn
 import logging
+import sys
+import types
 import numpy as np
 from intphyseval.model.dino_world.dinoworld import (
     TimmViTEncoder,
@@ -83,18 +85,13 @@ class DinoWorld(nn.Module):
     def load_ckpt(self, ckpt: str):
         logger.info(f"Loading DinoWorld checkpoint from {ckpt}")
 
-        def numpy_safe_globals():
-            scalar = getattr(getattr(np, "_core", np.core).multiarray, "scalar")
-            dtype = np.dtype
-            dtype_classes = [
-                getattr(np.dtypes, name)
-                for name in dir(np.dtypes)
-                if name.endswith("DType") and isinstance(getattr(np.dtypes, name), type)
-            ]
-            return [scalar, dtype, *dtype_classes]
+        for n in ("src", "src.utils", "src.utils.scheduler"):
+            sys.modules.setdefault(n, types.ModuleType(n))
+            sys.modules["src.utils.scheduler"].CAPIScheduler = type(
+                "CAPIScheduler", (), {}
+            )
 
-        with torch.serialization.safe_globals(numpy_safe_globals()):
-            checkpoint = torch.load(ckpt, map_location="cpu", weights_only=True)
+        checkpoint = torch.load(ckpt, map_location="cpu", weights_only=False)
         state_dict = checkpoint["model"]
 
         def load_component(component, prefix, state_dict):
