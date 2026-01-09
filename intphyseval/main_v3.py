@@ -1,3 +1,8 @@
+import os
+
+os.environ["HF_HUB_OFFLINE"] = "1"
+os.environ["HF_DATASETS_OFFLINE"] = "1"
+
 import logging
 from pathlib import Path
 from functools import partial
@@ -76,6 +81,7 @@ def _l1_pca(
     diff = torch.abs(proj_pred[..., idx] - proj_tgt[..., idx])  # [B, N, len(pcs)]
     return diff
 
+
 def l1_pca_dense(
     preds: Float[Tensor, "B N D"],
     targets: Float[Tensor, "B N D"],
@@ -84,6 +90,7 @@ def l1_pca_dense(
 ) -> Float[Tensor, "B"]:  # noqa: F821
     diff = _l1_pca(preds, targets, pcs=pcs)  # [B, N, len(pcs)]
     return diff.mean(dim=-1)
+
 
 def l1_pca(
     preds: Float[Tensor, "B N D"],
@@ -263,7 +270,9 @@ def run_eval(cfg):
         groups = {dataset.context_length: list(range(len(dataset)))}
 
     all_losses, all_indices = [], []
-    for gix, (_, indices) in enumerate(groups.items()):  # groups are already sorted by context length
+    for gix, (_, indices) in enumerate(
+        groups.items()
+    ):  # groups are already sorted by context length
         log.info(f"Processing group {gix} with {len(indices)} samples")
         # pre-shuffle indices for IID batching
         perm = torch.randperm(len(indices))

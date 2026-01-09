@@ -1,0 +1,49 @@
+# @package model
+
+net:
+  _target_: intphyseval.model.dinoworld_t.net.DinoWorldT
+  num_frames: 16
+  img_size: 224
+  patch_size: 16
+  tubelet_size: 1
+  fps: 4.0
+  normalize_targets: false
+
+  encoder:
+    _target_: intphyseval.model.dinoworld_t.dinoworld_t.TemporalViT
+    model_name: "vit_base_patch16_dinov3.lvd1689m"
+    num_frames: ${model.net.num_frames}
+    t_indices: [2, 5, 8, 11]
+    pretrained: true
+    freeze_backbone: false
+    num_classes: 0
+    st_block:
+      _partial_: true
+      _target_: intphyseval.model.dinoworld_t.dinoworld_t.GlobalSpatioTemporalBlock
+      is_causal: true
+      dim: 768
+      drop_path: 0.0
+      norm_layer:
+        _partial_: true
+        _target_: torch.nn.LayerNorm
+        eps: 1e-5
+      attn_kwargs:
+        num_heads: 12
+
+  target_encoder:
+    _target_: intphyseval.model.dino_world.dinoworld.TimmViTEncoder
+    model_name: "vit_base_patch16_dinov3.lvd1689m"
+    pretrained: true
+    num_classes: 0
+
+  predictor:
+    _target_: intphyseval.model.dino_world.dinoworld.CrossAttentionPredictor
+    dim: 768
+    depth: 12
+    num_heads: 12
+    encoder_dim: 768
+    rope_kwargs: {}
+
+pretrained: true
+ckpt_kwargs: 
+  ckpt: ???
